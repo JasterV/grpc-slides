@@ -7,16 +7,14 @@ Victor Martinez
 ---
 ## First, what is RPC?
 
-An idea to replicate to extend transfer of control and transmission of data from one machine to another.
+An idea to extend transfer of control and transmission of data from one machine to another.
 
 <a style="font-size: 20px;" href="http://birrell.org/andrew/papers/ImplementingRPC.pdf">
 http://birrell.org/andrew/papers/ImplementingRPC.pdf
 </a>
 
 
-note:
-
-At the time, building applications that required communicating with a separate machine was difficult and required big expertise, so much that only a few network experts were designated to.
+note: At the time, building applications that required communicating with a separate machine was difficult and required big expertise, so much that only a few network experts were designated to.
 One of the aims of this RPC implementation was to make it highly efficient (network-wise) as well as as simple to use as non-remote procedures.
 
 They believed that by providing a simple interface and tool for machine to machine communications, it would make it more accessible for less expert people to implement distributed applications.
