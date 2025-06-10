@@ -1,0 +1,6 @@
+slides:
+    theme: league
+    highlight_theme: vs
+revealjs:
+    history: true
+    slideNumber: c/t
