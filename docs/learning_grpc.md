@@ -705,13 +705,8 @@ impl<Req, Res, S> Service<http::Request<Req>> for JwtAuth<S>
 where
     S: Service<http::Request<Req>, Response = http::Response<Res>>,
 {
-    type Response = S::Response;
-    type Error = S::Error;
-    type Future = Future<Result<Self::Response, Self::Error>>;
-
-    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
-        self.inner.poll_ready(cx)
-    }
+    // poll_ready is mandatory but we omit it here
+    // as well as type definitions.
 
     fn call(&mut self, req: http::Request<Req>) -> Self::Future {
         let mut this = self.clone();
@@ -967,3 +962,9 @@ Server::builder()
 note:
 
 It is this simple :)
+
+---
+
+## Thank you for your time 
+
+:heart:
