@@ -635,9 +635,173 @@ Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> Starsky service
 Now let's dive into real middleware implementations
 
 ---
-### Authentication Layer
+### Authentication middleware
 
-TODO
+Let's build one with Tower.
+
+We'll implement Auth0 M2M authentication.
+
+---
+#### Authentication service
+
+```rust
+// Given a Json Web Key Set client and an audience,
+// it will look for an AUTHENTICATION header and try to validate it against the key set.
+pub struct JwtAuth<S> {
+    jwks_client: JwksClient<WebSource>,
+    audience: String,
+    inner: S,
+}
+```
+
+note:
+
+First we build a struct that will contain a generic inner service protected by our auth service.
+
+The audience represents the audience set in Auth0, which is our API identifier.
+
+The JwksClient contains the public keys to verify the signature of incoming tokens.
+
+---
+
+#### Authentication service
+
+```rust 
+impl<S> JwtAuth<S> {
+    async fn authorize<Req, Res>(&self, req: Request<Req>) -> Result<Request<Req>, Response<Res>>
+    where
+        Res: Default,
+    {
+        let token = req
+            .headers()
+            .get(AUTHORIZATION)
+            .ok_or_else(make_unauthorized_response)?
+            .to_str()
+            .map_err(|_| make_unauthorized_response())?
+            .strip_prefix("Bearer ")
+            .ok_or_else(make_unauthorized_response)?;
+
+        if let Err(_err) = self
+            .jwks_client
+            .decode(token, &[self.audience.clone()])
+            .await
+        {
+            return Err(make_unauthorized_response());
+        }
+
+        Ok(req)
+    }
+}
+```
+
+note:
+
+Here we implement the authentication logic, we are not implementing yet the service trait.
+
+I've simplified the code for the sake of the slide.
+
+We assume that `make_unauthorized_response` will build a gRPC unauthorized response.
+
+---
+
+#### Authentication service
+
+```rust
+impl<Req, Res, S> Service<http::Request<Req>> for JwtAuth<S>
+where
+    S: Service<http::Request<Req>, Response = http::Response<Res>>,
+{
+    type Response = S::Response;
+    type Error = S::Error;
+    type Future = Future<Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
+    }
+
+    fn call(&mut self, req: http::Request<Req>) -> Self::Future {
+        let mut this = self.clone();
+
+        async move {
+            match this.authorize(req).await {
+                Ok(req) => this.inner.call(req).await,
+                Err(res) => Ok(res),
+            }
+        }
+        .boxed()
+    }
+}
+```
+
+note:
+
+Finally implementing the service, pretty straight-forward
+
+---
+
+#### Authentication layer
+
+```rust
+// Reusable Tower Layer meant to wrap
+// a JWT Auth middleware Service around a generic service
+pub struct JwtAuthLayer {
+    jwks_client: JwksClient<WebSource>,
+    audience: String,
+}
+
+impl JwtAuthLayer {
+    pub fn new(jwks_client: JwksClient<WebSource>, audience: &str) -> Self {
+        Self {
+            jwks_client,
+            audience: audience.into(),
+        }
+    }
+}
+```
+
+note:
+
+Although confusing, the purpose of the layer is to make the usage of the middleware more user-friendly
+
+---
+
+#### Authentication layer
+
+```rust
+impl<S> Layer<S> for JwtAuthLayer {
+    type Service = JwtAuth<S>;
+
+    fn layer(&self, inner: S) -> Self::Service {
+        JwtAuth {
+            jwks_client: self.jwks_client.clone(),
+            audience: self.audience.clone(),
+            inner,
+        }
+    }
+}
+```
+
+note:
+
+What is done inside of the `layer` function could just be done manually, but it is done here for better user experience later.
+
+---
+
+#### Attaching it to our gRPC server
+
+```rust
+let authenticated_apis = ServiceBuilder::new()
+    .layer(JwtAuthLayer::new(jwks_client, AUD_POLICY_MANAGEMENT))
+    .service(PolicyManagementServiceServer::new(
+        PolicyManagementServiceImpl::new(application),
+    ));
+
+let server = Server::builder().add_service(authenticated_apis);
+```
+
+note:
+
+Simplified version of our real server implementation in `es-be`
 
 ---
 ### Tracing Layer
