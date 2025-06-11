@@ -672,14 +672,8 @@ impl<S> JwtAuth<S> {
     where
         Res: Default,
     {
-        let token = req
-            .headers()
-            .get(AUTHORIZATION)
-            .ok_or_else(make_unauthorized_response)?
-            .to_str()
-            .map_err(|_| make_unauthorized_response())?
-            .strip_prefix("Bearer ")
-            .ok_or_else(make_unauthorized_response)?;
+        // Error handling has been omitted for simplicity purposes
+        let token = req.headers().get(AUTHORIZATION).strip_prefix("Bearer ");
 
         if let Err(_err) = self
             .jwks_client
