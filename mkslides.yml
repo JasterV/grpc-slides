@@ -1,6 +1,6 @@
 slides:
+    highlight_theme: monokai
     theme: dracula
-    highlight_theme: vs
 revealjs:
     history: true
     slideNumber: c/t

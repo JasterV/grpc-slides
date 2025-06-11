@@ -62,7 +62,9 @@ https://github.com/facebook/fbthrift
 </a>
 
 
-note: Many IDLs have been developed over time. Mozilla, Microsoft, IBM... and more developed their own internal RPC frameworks with their own IDLs [2]
+note:
+
+Many IDLs have been developed over time. Mozilla, Microsoft, IBM... and more developed their own internal RPC frameworks with their own IDLs [2]
 
 In the paper mentioned above, they wrote the interface using the Mesa interface modules feature:
 
@@ -80,7 +82,9 @@ In the paper mentioned above, they wrote the interface using the Mesa interface 
 https://grpc.io/
 </a>
 
-note: google Remote procedure calls
+note:
+
+google Remote procedure calls
 
 "gRPC was initially created by Google, which has used a single general-purpose RPC infrastructure called **Stubby** to connect the large number of microservices running within and across its data centers. In March 2015, Google decided to build the next version of Stubby and make it open source. The result was **gRPC**"
 
@@ -92,7 +96,9 @@ gRPC dictates how you will build your network interface.
 
 Code is generated for you batteries included, you must only fill the gaps.
 
-note: All the underlying details about networking, encoding & more is handled for you.
+note:
+
+All the underlying details about networking, encoding & more is handled for you.
 
 It is more a framework in the sense of servers. They must use the generated Server Stub, with the only need of implementing the Service interfaces.
 
@@ -110,7 +116,9 @@ So we get for free
 - **Server push**
 - **TLS**
 
-note: Explain multiplexing and server push
+note:
+
+Explain multiplexing and server push
 
 ---
 
@@ -118,7 +126,9 @@ note: Explain multiplexing and server push
 
 ![image](assets/rpc_types.svg)
 
-note: Explain that each of these RPC types can be specified on the protobuffers IDL
+note:
+
+Explain that each of these RPC types can be specified on the protobuffers IDL
 
 ---
 ### Metadata
@@ -131,7 +141,9 @@ Implemented using HTTP/2 headers.
 https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
 </a>
 
-note: gRPC metadata can be sent and received by both the client and the server. Headers are sent from the client to the server before the initial request and from the server to the client before the initial response of an RPC call.
+note:
+
+gRPC metadata can be sent and received by both the client and the server. Headers are sent from the client to the server before the initial request and from the server to the client before the initial response of an RPC call.
 
 On the link I show, they document the supported values for metadata
 
@@ -148,7 +160,9 @@ Can be useful for: Authentication & tracing
 - **Health checking** (Service-specific health checking)
 - **Interceptors** (Middleware for RPCs)
 
-note: It is important to explain that these features might differ from language to language, since it depends completely on how each of them implements gRPC
+note:
+
+It is important to explain that these features might differ from language to language, since it depends completely on how each of them implements gRPC
 
 - **Flow control** is a mechanism to ensure that a receiver of messages does not get overwhelmed by a fast sender. Flow control prevents data loss, improves performance and increases reliability.
 
@@ -162,7 +176,9 @@ note: It is important to explain that these features might differ from language 
 
 https://protobuf.dev/
 
-note: Explain that it is the default binary serialization format supported by gRPC
+note:
+
+Explain that it is the default binary serialization format supported by gRPC
 
 It is also developed by google.
 
@@ -175,7 +191,9 @@ It is also developed by google.
 - Language-specific **runtimes**
 - The **serialization format**
 
-note: Here we will focus on the IDL and the tooling, we won't focus on the serialization format.
+note:
+
+Here we will focus on the IDL and the tooling, we won't focus on the serialization format.
 
 ---
 ### Protobufs as an Interface Definition Language
@@ -231,7 +249,9 @@ Supports plugins for different languages.
 protoc --proto_path=src --python_out=build/gen src/foo.proto
 ```
 
-note: `--proto_path` specifies the source directory, `--*_out` the destination directory, and the rest is the path to your `.proto`
+note:
+
+`--proto_path` specifies the source directory, `--*_out` the destination directory, and the rest is the path to your `.proto`
 
 ---
 ### Buf CLI
@@ -248,7 +268,9 @@ note: `--proto_path` specifies the source directory, `--*_out` the destination d
 https://buf.build/product/cli
 </a>
 
-note: Explain that it builds on top of protoc. Be very short here, just mention the tool briefly. It is important because we use it.
+note:
+
+Explain that it builds on top of protoc. Be very short here, just mention the tool briefly. It is important because we use it.
 
 ---
 
@@ -276,7 +298,9 @@ buf breaking --against ".git#branch=master"
 - **Backward and Forward compatibility**
 - Support for **RPC service definition**
 
-note: Give a short example of why it is backward and forward compatible. Mention tags.
+note:
+
+Give a short example of why it is backward and forward compatible. Mention tags.
 
 ---
 ## gRPC in the Rust ecosystem
@@ -300,7 +324,9 @@ note: Give a short example of why it is backward and forward compatible. Mention
 https://github.com/hyperium/tonic
 </a>
 
-note: Built on top of Tower, Tonic is a gRPC over HTTP/2 implementation focused on **high performance**, **interoperability**, and **flexibility**.
+note:
+
+Built on top of Tower, Tonic is a gRPC over HTTP/2 implementation focused on **high performance**, **interoperability**, and **flexibility**.
 
 It has first class support for async/await.
 
@@ -322,7 +348,9 @@ Codegen tools need to be used to generate the client and server stubs that will 
 - Client & Server **stub generation**
 - Extensible via **Tower** services
 
-note: These are only a few notable features, it provides more for sure
+note:
+
+These are only a few notable features, it provides more for sure
 
 ---
 ### Generate code from Proto definitions :gear:
@@ -344,7 +372,9 @@ tonic_build::configure()
     )?;
 ```
 
-note:  First we need to talk about how do we generate code from our protobuf definitions.
+note:
+
+First we need to talk about how do we generate code from our protobuf definitions.
 
 ---
 ### Expose the generated code as a library
@@ -359,7 +389,9 @@ pub mod policy_service {
 }
 ```
 
-note: We need to expose the generated code through our lib.rs
+note:
+
+We need to expose the generated code through our lib.rs
 
 ---
 ### Auto generated services
@@ -374,7 +406,9 @@ pub trait PolicyManagementService {
 }
 ```
 
-note: We get a trait generated from the Protobuf Service definition
+note:
+
+We get a trait generated from the Protobuf Service definition
 
 ---
 ### Building a server
@@ -398,7 +432,9 @@ let listener = TcpListener::bind(("0.0.0.0", grpc_port)).await?;
 server.serve(listener).await?;
 ```
 
-note: Simple build of a Tonic Server. We will dive into how to add middleware later.
+note:
+
+Simple build of a Tonic Server. We will dive into how to add middleware later.
 
 Highlight the fact that at the end of the day the gRPC server will be listening to a TCP port like any other HTTP2 server.
 
@@ -421,7 +457,9 @@ request.metadata_mut.insert("authentication", token);
 let _response = client.generate_contract(request).await?;
 ```
 
-note: What if we wanted to add those headers for every request? Now we talk about interceptors
+note:
+
+What if we wanted to add those headers for every request? Now we talk about interceptors
 
 ---
 ### Interceptors
@@ -457,7 +495,9 @@ Tonic provides a health check service implementing a standard gRPC health checki
 https://github.com/grpc/grpc/blob/master/doc/health-checking.md
 </a>
 
-note: A GRPC service is used as the health checking mechanism. 
+note:
+
+A GRPC service is used as the health checking mechanism. 
 
 Since it is a GRPC service itself, doing a health check is in the same format as a normal rpc. 
 
@@ -501,7 +541,9 @@ Server::builder()
 	.await?;
 ```
 
-note: Make it clear that we are using the `tonic-health` crate which doesn't come by default with `tonic`.
+note:
+
+Make it clear that we are using the `tonic-health` crate which doesn't come by default with `tonic`.
 
 ---
 **What about more complex middleware? What if we need to also intercept responses?**
@@ -513,7 +555,9 @@ Let's dive into Tower
 
 <img alt="tower" src="assets/tower.png" style="width: 200px;" />
 
-note: Tower is a library of modular and reusable components for building robust networking clients and servers.
+note:
+
+Tower is a library of modular and reusable components for building robust networking clients and servers.
 
 Tonic is built on top of Tower
 
@@ -539,7 +583,9 @@ pub trait Service<Request> {
 }
 ```
 
-note: Tower’s fundamental abstraction.
+note:
+
+Tower’s fundamental abstraction.
 
 An asynchronous function from a `Request` to a `Response`.
 
@@ -560,7 +606,9 @@ pub trait Layer<S> {
 }
 ```
 
-note: Mechanism to layer services. It allows us to wrap a generic service with another one. It can be used to wrap a reusable service which is meant to act as a middleware around another service.
+note:
+
+Mechanism to layer services. It allows us to wrap a generic service with another one. It can be used to wrap a reusable service which is meant to act as a middleware around another service.
 
 ---
 ### Building a layered service
@@ -573,7 +621,9 @@ ServiceBuilder::new()
     .named_layer(StarskyServer::new(starsky_service));
 ```
 
-note: A real example of a layered service from Starsky. Slightly simplified for the sake of the presentation.
+note:
+
+A real example of a layered service from Starsky. Slightly simplified for the sake of the presentation.
 The flow will be the following: 
 Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> Starsky service
 
