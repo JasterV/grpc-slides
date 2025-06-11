@@ -863,15 +863,8 @@ fn on_response<B>(response: &http::Response<B>, span: &tracing::Span) {
     span.record("rpc.grpc.status_code", code as i32);
     span.record("grpc.response.header", format!("{:?}", headers));
 
-    if matches!(
-        code,
-        tonic::Code::Unknown
-            | tonic::Code::DeadlineExceeded
-            | tonic::Code::Unimplemented
-            | tonic::Code::Internal
-            | tonic::Code::Unavailable
-            | tonic::Code::DataLoss
-    ) {
+    // The match has been simplified for the slides purpose
+    if matches!(code, tonic::Code::Unknown) {
         span.record("otel.status_code", "ERROR");
     }
 }  
@@ -901,17 +894,21 @@ where
 
     fn call(&mut self, req: ::http::Request<ReqB>) -> Self::Future {
         let parent_context = TraceContextPropagator::new().extract(&HeaderExtractor(req.headers()));
-
-        let span = M::make_span(&req);
+        let span = make_span(&req);
         span.set_parent(parent_context);
 
         self.inner
             .call(req)
             .instrument(span.clone())
-            .inspect_ok(move |response| {
-                M::on_response(response, &span);
-            })
-            .boxed()
+            .inspect_ok(move |response| on_response(response, &span))
     }
 }  
 ```
+
+note:
+
+Again, the code is simplified for the slides purpose.
+
+Note how the same span is used to track the request and response.
+
+Then that span is used as the parent span for the inner service call.
