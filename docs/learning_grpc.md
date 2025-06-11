@@ -850,7 +850,7 @@ Explain how this is a simplified version of the real implementation in `prima_to
 
 ---
 
-#### Update span from the response
+#### Updating the span from with the response
 
 ```rust
 fn on_response<B>(response: &http::Response<B>, span: &tracing::Span) {
@@ -873,6 +873,20 @@ fn on_response<B>(response: &http::Response<B>, span: &tracing::Span) {
 note:
 
 We will see in a second how the span we receive by parameters is the same span we created when handling the request
+
+---
+
+#### Tracing service
+
+```rust
+pub struct OpenTelemetryServerTracing<S> {
+    inner: S,
+}   
+```
+
+note:
+
+We need to implement the service that will act as the tracing middleware
 
 ---
 
@@ -912,3 +926,50 @@ Again, the code is simplified for the slides purpose.
 Note how the same span is used to track the request and response.
 
 Then that span is used as the parent span for the inner service call.
+
+---
+#### Tracing layer
+
+```rust
+pub struct OpenTelemetryServerTracingLayer {}
+
+impl OpenTelemetryServerTracingLayer {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+```
+
+note:
+
+As we've mentioned, layers exist for better development experience, services could be layered manually.
+
+In this case we don't need any data to be added to the layer.
+
+---
+#### Tracing layer
+
+```rust
+impl<S> Layer<S> for OpenTelemetryServerTracingLayer {
+    type Service = OpenTelemetryServerTracing<S>;
+
+    fn layer(&self, inner: S) -> Self::Service {
+        OpenTelemetryServerTracing { inner }
+    }
+}
+```
+
+---
+#### Attaching it to our gRPC server
+
+```rust
+Server::builder()
+    .layer(OpenTelemetryServerTracingLayer::new())
+    // layer other services to benefit from tracing
+    .serve(addr)
+    .await?;   
+```
+
+note:
+
+It is this simple :)
