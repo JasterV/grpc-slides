@@ -786,7 +786,6 @@ note:
 What is done inside of the `layer` function could just be done manually, but it is done here for better user experience later.
 
 ---
-
 #### Attaching it to our gRPC server
 
 ```rust
@@ -806,4 +805,113 @@ Simplified version of our real server implementation in `es-be`
 ---
 ### Tracing Layer
 
-TODO
+Let's build another Tower service.
+
+Interceptors are not the best fit, we want to trace responses too.
+
+---
+
+#### Building a span from a request
+
+```rust
+fn make_span<B>(request: &http::Request<B>) -> tracing::Span {
+    // We'll assume server_info() works
+    let ServerInfo { host, port, .. } = server_info(request);
+
+    let mut headers = request.headers();
+
+    let name = request.uri().path().trim_start_matches('/');
+
+    let (service, method) = name
+        .split_once('/')
+        .expect("gRPC paths should be formatted as $service/$method");
+
+    tracing::info_span!(
+        "gRPC request",
+        otel.name = %name,
+        rpc.grpc.request.metadata = ?headers,
+        rpc.method = method,
+        rpc.service = service,
+        rpc.system = "grpc",
+        server.address = %host,
+        server.port = port,
+        span.kind = "server",
+        // set by the response span
+        otel.status_code = tracing::field::Empty,
+        rpc.grpc.response.metadata = tracing::field::Empty,
+        rpc.grpc.status_code = tracing::field::Empty,
+    )
+}
+```
+
+note:
+
+Explain how this is a simplified version of the real implementation in `prima_tower`
+
+---
+
+#### Update span from the response
+
+```rust
+fn on_response<B>(response: &http::Response<B>, span: &tracing::Span) {
+    let mut headers = response.headers().clone();
+
+    let code = tonic::Status::from_header_map(&headers)
+        .map(|status| status.code())
+        .unwrap_or(tonic::Code::Ok);
+
+    span.record("rpc.grpc.status_code", code as i32);
+    span.record("grpc.response.header", format!("{:?}", headers));
+
+    if matches!(
+        code,
+        tonic::Code::Unknown
+            | tonic::Code::DeadlineExceeded
+            | tonic::Code::Unimplemented
+            | tonic::Code::Internal
+            | tonic::Code::Unavailable
+            | tonic::Code::DataLoss
+    ) {
+        span.record("otel.status_code", "ERROR");
+    }
+}  
+```
+
+note:
+
+We will see in a second how the span we receive by parameters is the same span we created when handling the request
+
+---
+
+#### Tracing service
+
+```rust
+impl<Req, Res, S> Service<Request<Req>> for OpenTelemetryServerTracing<S>
+where
+    S: Service<Request<Req>, Response = Response<Res>>,
+{
+    type Response = S::Response;
+    type Error = S::Error;
+    type Future = Future<Result<Self::Response, Self::Error>>;
+
+    #[inline]
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>> {
+        self.inner.poll_ready(cx)
+    }
+
+    fn call(&mut self, req: ::http::Request<ReqB>) -> Self::Future {
+        let parent_context = TraceContextPropagator::new().extract(&HeaderExtractor(req.headers()));
+
+        let span = M::make_span(&req);
+        span.set_parent(parent_context);
+
+        self.inner
+            .call(req)
+            .instrument(span.clone())
+            .inspect_ok(move |response| {
+                M::on_response(response, &span);
+            })
+            .boxed()
+    }
+}  
+```
