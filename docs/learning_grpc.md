@@ -17,14 +17,20 @@ http://birrell.org/andrew/papers/ImplementingRPC.pdf
 </a>
 
 
-note: At the time, building applications that required communicating with a separate machine was difficult and required big expertise, so much that only a few network experts were designated to.
-One of the aims of this RPC implementation was to make it highly efficient (network-wise) as well as as simple to use as non-remote procedures.
-
-They believed that by providing a simple interface and tool for machine to machine communications, it would make it more accessible for less expert people to implement distributed applications.
-
-Also, they aimed to provide secure communications with RPC. At the time, none of the implemented protocols inside their network had no security at all to the point where passwords were being sent as plain text.
+note:
 
 The concept dates back to 1976 [1]
+
+Building applications that required communicating with a separate machine was difficult and required big expertise
+
+This RPC implementation aimed to make it highly efficient (network-wise) as well as as simple to use as non-remote procedures.
+
+Make it more accessible to build distributed applications
+
+They aimed to provide secure communications with RPC.
+
+Things were shared in plain non secured text.
+
 
 [1] WHITE, J. E. A high-level framework for network-based resource sharing. In Proc. National Computer Conference, (June 1976).
 
