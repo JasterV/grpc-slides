@@ -21,6 +21,15 @@ note:
 
 The concept dates back to 1976 [1]
 
+---
+![image](assets/rpc_architecture.png)
+
+<a style="font-size: 20px;" href="http://birrell.org/andrew/papers/ImplementingRPC.pdf">
+http://birrell.org/andrew/papers/ImplementingRPC.pdf
+</a>
+
+note: 
+
 Building applications that required communicating with a separate machine was difficult and required big expertise
 
 This RPC implementation aimed to make it highly efficient (network-wise) as well as as simple to use as non-remote procedures.
@@ -31,21 +40,12 @@ They aimed to provide secure communications with RPC.
 
 Things were shared in plain non secured text.
 
-
-[1] WHITE, J. E. A high-level framework for network-based resource sharing. In Proc. National Computer Conference, (June 1976).
-
----
-![image](assets/rpc_architecture.png)
-
-<a style="font-size: 20px;" href="http://birrell.org/andrew/papers/ImplementingRPC.pdf">
-http://birrell.org/andrew/papers/ImplementingRPC.pdf
-</a>
-
-note: 
-
 Back in the time they already used a tool to auto-generate the client and server stubs:
 
 `But the user-stub and server-stub are automatically generated, by a program called Lupine.`
+
+
+[1] WHITE, J. E. A high-level framework for network-based resource sharing. In Proc. National Computer Conference, (June 1976).
 
 ---
 ### Interface Definition Language
