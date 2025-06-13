@@ -45,10 +45,9 @@ note:
 
 The program structure would be based in the concept of Stubs.
 
-
 Five pieces of program are involved when making an RPC call:
 
-User -> User-stub -> RPC communications package (known as RPCRuntime)  -> server-stub -> the server.
+User -> User-stub -> RPC communications package (known as RPCRuntime) -> server-stub -> the server.
 
 They auto-generated the client and server stubs:
 
