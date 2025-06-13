@@ -1,11 +1,14 @@
 ---
 ---
+
 # Learning gRPC
 
 Victor Martinez
 
 ---
 ## First, what is RPC?
+
+Remote Procedure Calls.
 
 An idea to extend transfer of control and transmission of data from one machine to another.
 
