@@ -1,5 +1,9 @@
 words = [
+    "chrono",
     "idl",
     "prima",
+    "prost",
     "protoc",
+    "protos",
+    "serde",
 ]
