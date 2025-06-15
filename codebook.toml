@@ -6,4 +6,5 @@ words = [
     "protoc",
     "protos",
     "serde",
+    "starsky",
 ]
