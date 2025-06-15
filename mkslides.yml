@@ -1,5 +1,6 @@
 slides:
-    highlight_theme: docs/assets/themes/highlight/tokyo-night-dark.css
+    # highlight_theme: docs/assets/themes/highlight/tokyo-night-dark.css
+    highlight_theme: stackoverflow-dark
     theme: docs/assets/themes/dracula.css
     template: docs/assets/templates/slideshow.html.jinja
 revealjs:
