@@ -54,7 +54,7 @@ They auto-generated the client and server stubs:
 `The user-stub and server-stub are automatically generated, by a program called Lupine.`
 
 ---
-### Interface Definition Language
+## Interface Definition Language
 
 ```thrift
 struct Phone {
@@ -109,7 +109,7 @@ google Remote procedure calls
 
 ---
 
-### Why a framework?
+## Why a framework?
 
 gRPC dictates how you will build your network interface.
 
@@ -127,7 +127,7 @@ Some implementations wrap the original C library, some don't.
 
 ---
 
-### Built on top of HTTP2
+## Built on top of HTTP2
 
 So we get for free
 - **Multiplexing**
@@ -141,7 +141,7 @@ Explain multiplexing and server push
 
 ---
 
-### 4 types of RPC supported
+## 4 types of RPC supported
 
 ![image](assets/images/rpc_types.svg)
 
@@ -150,7 +150,7 @@ note:
 Explain that each of these RPC types can be specified on the protobuffers IDL
 
 ---
-### Metadata
+## Metadata
 
 Key-value pairs of data used to provide additional information about a call.
 
@@ -169,7 +169,7 @@ On the link I show, they document the supported values for metadata
 Can be useful for: Authentication & tracing
 
 ---
-### And many more features
+## And many more features
 
 - **Health checking** (Service-specific health checking)
 - **Interceptors** (Middleware for RPCs)
@@ -189,7 +189,7 @@ It is important to explain that these features might differ from language to lan
 
 - **Health check**: gRPC specifies a standard service API ([health/v1](https://github.com/grpc/grpc-proto/blob/master/grpc/health/v1/health.proto)) for performing health check calls against gRPC servers. An implementation of this service is provided, but you are responsible for updating the health status of your services. It is pluggable, and some languages might not provide it.
 ---
-### Protocol buffers
+## Protocol buffers
 
 *Protocol Buffers are language-neutral, platform-neutral extensible mechanisms for serializing structured data.*
 
@@ -203,7 +203,7 @@ It is also developed by google.
 
 ---
 
-### They are a combination of
+## They are a combination of
 
 - The **Interface Definition Language**
 - The compiler that **generates code** from IDL files
@@ -215,10 +215,10 @@ note:
 Here we will focus on the IDL and the tooling, we won't focus on the serialization format.
 
 ---
-### Protobufs as an Interface Definition Language
+## Protobufs as an Interface Definition Language
 ---
 
-### Defining messages
+## Defining messages
 
 ```protobuf
 // amend_termination/request/v1/request.proto
@@ -240,7 +240,7 @@ message AmendTerminationRequest {
 
 ---
 
-### Defining a service
+## Defining a service
 
 ```protobuf
 // service/v1/service.proto
@@ -258,20 +258,20 @@ service PolicyManagementService {
 
 ---
 
-### Remarkable features of Protocol buffers
+## Remarkable features of Protocol buffers
 
 - **Strongly typed** data
 - **Language** and **platform neutral**
 - **Compact binary format**
 - Support for **RPC service definition**
-- **Backward and Forward compatibility**
+- **Backward** and **Forward compatibility**
 
 note:
 
 Give a short example of why it is backward and forward compatible. Mention tags.
 
 ---
-### The protoc compiler
+## The protoc compiler
 
 Compiles `.proto` files into code.
 Supports plugins for different languages.
@@ -285,7 +285,7 @@ note:
 `--proto_path` specifies the source directory, `--*_out` the destination directory, and the rest is the path to your `.proto`
 
 ---
-### Buf CLI
+## Buf CLI
 
 - A **linter** for proto files
 - A **formatter** for proto files
@@ -335,7 +335,7 @@ The main goal of tonic is to provide a generic gRPC implementation over HTTP/2 
 Codegen tools need to be used to generate the client and server stubs that will encode and decode the binary data and deal with other gRPC features such as streaming.
 
 ---
-### Features
+## Features
 
 - **Health check** of services
 - **Interceptors** 
@@ -353,7 +353,7 @@ note:
 These are only a few notable features, it provides more for sure
 
 ---
-### Generating code from Proto definitions :gear:
+## Generating code from Proto definitions :gear:
 
 ```rust
 // build.rs
@@ -377,7 +377,7 @@ note:
 First we need to talk about how do we generate code from our protobuf definitions.
 
 ---
-### Expose the generated code as a library
+## Expose the generated code as a library
 
 ```rust
 // lib.rs
@@ -394,7 +394,7 @@ note:
 We need to expose the generated code through our lib.rs
 
 ---
-### Auto generated services
+## Auto generated services
 
 ```rust
 pub trait PolicyManagementService {
@@ -411,7 +411,7 @@ note:
 We get a trait generated from the Protobuf Service definition
 
 ---
-### Building a server
+## Building a server
 
 ```rust
 // main.rs
@@ -439,7 +439,7 @@ Simple build of a Tonic Server. We will dive into how to add middleware later.
 Highlight the fact that at the end of the day the gRPC server will be listening to a TCP port like any other HTTP2 server.
 
 ---
-### Building a client
+## Building a client
 
 ```rust
 let mut client = 
@@ -462,7 +462,7 @@ note:
 What if we wanted to add those headers for every request? Now we talk about interceptors
 
 ---
-### Interceptors
+## Interceptors
 
 Interceptors are similar to middleware but with less flexibility.
 They allow you to:
@@ -470,7 +470,7 @@ They allow you to:
 - Cancel a request with a `Status`.
 ---
 
-### Interceptors in practice
+## Interceptors in practice
 
 ```rust
 fn check_auth(req: Request<()>) -> Result<Request<()>, Status> {
@@ -487,7 +487,7 @@ let svc = PolicyManagementServiceServer::with_interceptor(
 ```
 
 ---
-### Health checking gRPC services
+## Health checking gRPC services
 
 Tonic provides a health check service implementing a standard gRPC health checking protocol.
 
@@ -506,7 +506,7 @@ It has rich semantics such as per-service health status.
 The server has full control over the access of the health checking service.
 
 ---
-### Health service definition
+## Health service definition
 
 ```protobuf
 service Health {
@@ -524,7 +524,7 @@ This definition is provided by the official gRPC docs, each language runtime mig
 https://github.com/grpc/grpc/blob/master/doc/health-checking.md
 </a>
 ---
-### Enabling the health service
+## Enabling the health service
 
 ```rust
 let (health_reporter, health_service) = health_reporter();
@@ -566,7 +566,7 @@ It's core abstraction is the Service, which we see in the next slide.
 It exposes already a set of basic reusable services to solve common networking patterns such as timeouts and rate limiting.
 
 ---
-### Tower service
+## Tower service
 
 ```rust
 pub trait Service<Request> {
@@ -596,7 +596,7 @@ It immediately returns a `Future` representing the eventual completion of proc
 The processing may depend on calling other services. At some point in the future, the processing will complete, and the `Future` will resolve to a response or error.
 
 ---
-### Layers
+## Layers
 
 ```rust
 pub trait Layer<S> {
@@ -611,7 +611,7 @@ note:
 Mechanism to layer services. It allows us to wrap a generic service with another one. It can be used to wrap a reusable service which is meant to act as a middleware around another service.
 
 ---
-### Building a layered service
+## Building a layered service
 
 ```rust
 ServiceBuilder::new()
@@ -629,7 +629,7 @@ Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> Starsky service
 
 ---
 
-#### Building a layered service
+## Building a layered service
 
 <img alt="tower" src="assets/images/layers-diagram.svg" style="max-width: 45%;" />
 ---
@@ -637,14 +637,14 @@ Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> Starsky service
 Now let's dive into real middleware implementations
 
 ---
-### Authentication middleware
+## Authentication middleware
 
 Let's build one with Tower.
 
 We'll implement Auth0 M2M authentication.
 
 ---
-#### Authentication service
+## Authentication service
 
 ```rust
 // Given a Json Web Key Set client and an audience,
@@ -666,7 +666,7 @@ The JwksClient contains the public keys to verify the signature of incoming toke
 
 ---
 
-#### Authentication service
+## Authentication service
 
 ```rust 
 impl<S> JwtAuth<S> {
@@ -700,7 +700,7 @@ We assume that `make_unauthorized_response` will build a gRPC unauthorized respo
 
 ---
 
-#### Authentication service
+## Authentication service
 
 ```rust
 impl<Req, Res, S> Service<http::Request<Req>> for JwtAuth<S>
@@ -730,7 +730,7 @@ Finally implementing the service, pretty straight-forward
 
 ---
 
-#### Authentication layer
+## Authentication layer
 
 ```rust
 // Reusable Tower Layer meant to wrap
@@ -756,7 +756,7 @@ Although confusing, the purpose of the layer is to make the usage of the middlew
 
 ---
 
-#### Authentication layer
+## Authentication layer
 
 ```rust
 impl<S> Layer<S> for JwtAuthLayer {
@@ -777,7 +777,7 @@ note:
 What is done inside of the `layer` function could just be done manually, but it is done here for better user experience later.
 
 ---
-#### Attaching it to our gRPC server
+## Attaching it to our gRPC server
 
 ```rust
 let authenticated_apis = ServiceBuilder::new()
@@ -794,7 +794,7 @@ note:
 Simplified version of our real server implementation in `es-be`
 
 ---
-### Tracing Layer
+## Tracing Layer
 
 Let's build another Tower service.
 
@@ -802,7 +802,7 @@ Interceptors are not the best fit, we want to trace responses too.
 
 ---
 
-#### Building a span from a request
+## Building a span from a request
 
 ```rust
 fn make_span<B>(request: &http::Request<B>) -> tracing::Span {
@@ -841,7 +841,7 @@ Explain how this is a simplified version of the real implementation in `prima_to
 
 ---
 
-#### Updating the span from with the response
+## Updating the span with the response
 
 ```rust
 fn on_response<B>(response: &http::Response<B>, span: &tracing::Span) {
@@ -867,7 +867,7 @@ We will see in a second how the span we receive by parameters is the same span w
 
 ---
 
-#### Tracing service
+## Tracing service
 
 ```rust
 pub struct OpenTelemetryServerTracing<S> {
@@ -881,7 +881,7 @@ We need to implement the service that will act as the tracing middleware
 
 ---
 
-#### Tracing service
+## Tracing service
 
 ```rust
 impl<Req, Res, S> Service<Request<Req>> for OpenTelemetryServerTracing<S>
@@ -919,7 +919,7 @@ Note how the same span is used to track the request and response.
 Then that span is used as the parent span for the inner service call.
 
 ---
-#### Tracing layer
+## Tracing layer
 
 ```rust
 pub struct OpenTelemetryServerTracingLayer {}
@@ -938,7 +938,7 @@ As we've mentioned, layers exist for better development experience, services cou
 In this case we don't need any data to be added to the layer.
 
 ---
-#### Tracing layer
+## Tracing layer
 
 ```rust
 impl<S> Layer<S> for OpenTelemetryServerTracingLayer {
@@ -951,7 +951,7 @@ impl<S> Layer<S> for OpenTelemetryServerTracingLayer {
 ```
 
 ---
-#### Attaching it to our gRPC server
+## Attaching it to our gRPC server
 
 ```rust
 Server::builder()

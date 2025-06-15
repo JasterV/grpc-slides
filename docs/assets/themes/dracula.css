@@ -240,22 +240,21 @@ section.has-light-background h6 {
   position: relative;
   margin: var(--r-block-margin) auto;
   text-align: left;
-  font-size: 0.55em;
   font-family: var(--r-code-font);
-  line-height: 1.2em;
   box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
-  max-width: 90%;
+  max-width: 80%;
 }
 
 .reveal .code-wrapper code {
-  max-height: 400px;
+  max-height: none;
   font-family: var(--r-code-font);
   tab-size: 2;
   white-space: pre-wrap;
   overflow-x: hidden;
   overflow-wrap: break-word;
   overflow-y: auto;
-  font-size: 16px;
+  font-size: 1.3rem;
+  line-height: 1.4em;
 }
 
 .reveal table {
