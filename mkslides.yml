@@ -6,5 +6,6 @@ revealjs:
     history: true
     slideNumber: c/t
     jumpToSlide: true
+    transition: fade
     height: 1080
     width: 1920

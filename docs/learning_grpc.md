@@ -608,16 +608,11 @@ Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> Starsky service
 ## Building a layered service
 
 <img alt="tower" src="assets/images/layers-diagram.svg" style="max-width: 35%;" />
----
-
-Now let's dive into real middleware implementations
 
 ---
-## Authentication middleware
+## Authorization middleware
 
-Let's build one with Tower.
-
-We'll implement Auth0 M2M authentication.
+Auth0 M2M authorization
 
 ---
 ## Authentication service
