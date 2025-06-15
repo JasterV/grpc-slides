@@ -1,5 +1,5 @@
 slides:
-    highlight_theme: tokyo-night-dark
+    highlight_theme: docs/assets/themes/highlight/tokyo-night-dark.css
     theme: docs/assets/themes/dracula.css
     template: docs/assets/templates/slideshow.html.jinja
 revealjs:
