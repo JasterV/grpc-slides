@@ -437,7 +437,8 @@ note:
 We need to expose the generated code through our lib.rs
 
 ---
-## Auto generated services
+
+## Filling the gaps
 
 ```rust
 pub trait PolicyManagementService {
@@ -454,10 +455,44 @@ note:
 We get a trait generated from the Protobuf Service definition
 
 ---
-## Building a server
+
+## Filling the gaps
 
 ```rust
-// main.rs
+use es_policy_grpc::policy_service::v1::PolicyManagementService;
+use es_policy_grpc::messages::withdraw_policy::request::v1::WithdrawPolicyRequest;
+use es_policy_grpc::messages::withdraw_policy::response::v1::WithdrawPolicyResponse;
+use tonic::{Request, Response, Status};
+
+pub struct PolicyManagementServiceImpl {
+    application: Arc<dyn ApplicationServices>,
+}
+
+impl PolicyManagementService for PolicyManagementServiceImpl {
+    async fn withdraw_policy(
+        &self,
+        request: Request<WithdrawPolicyRequest>,
+    ) -> Result<Response<WithdrawPolicyResponse>, Status> {
+        let request = request.into_inner();
+
+        let policy_id = Uuid::parse_str(&request.policy_id).unwrap();
+        let details = request.try_to_domain().unwrap();
+
+        self.application.cancel_policy(policy_id, details).await.unwrap()
+
+        Ok(Response::new(WithdrawPolicyResponse {
+            policy_id: policy_id.to_string(),
+        }))
+    }
+    // ..
+}
+
+```
+
+---
+## Building the server
+
+```rust
 use tonic::Server as GrpcServer;
 use es_policy_grpc::policy_service::v1::PolicyManagementServiceServer as PolicyManagementServerStub;
 
@@ -484,10 +519,9 @@ Simple build of a Tonic Server. We will dive into how to add middleware later.
 Highlight the fact that at the end of the day the gRPC server will be listening to a TCP port like any other HTTP2 server.
 
 ---
-## Building a client
+## Building the client
 
 ```rust
-// Auto-generated client stub
 use es_policy_grpc::policy_service::v1::PolicyManagementServiceClient as PolicyManagementClientStub;
 use tonic::{metadata::MetadataValue, Request};
 use es_policy_grpc::messages::decline_renewal::request::v1::{
@@ -496,7 +530,8 @@ use es_policy_grpc::messages::decline_renewal::request::v1::{
     CustomerDeclineRenewalReason
 };
 
-let mut client = PolicyManagementClientStub::connect("http://[::1]:50051").await?;
+// Auto-generated client stub
+let mut client = PolicyManagementClientStub::connect("http://localhost:50051").await?;
 
 let mut request = Request::new(DeclineRenewalRequest {
     policy_id: uuid::Uuid::new_v4(),
