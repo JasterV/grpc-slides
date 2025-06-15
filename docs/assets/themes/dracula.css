@@ -52,7 +52,7 @@ html * {
   --r-overlay-element-fg-color: 0, 0, 0;
   --r-bold-color: #ffb86c;
   --r-italic-color: #f1fa8c;
-  --r-inline-code-color: #50fa7b;
+  --r-inline-code-color: white;
   --r-list-bullet-color: #8be9fd;
 }
 
@@ -373,13 +373,6 @@ section.has-light-background h6 {
   .backgrounds {
     background-color: var(--r-background-color);
   }
-}
-
-:root {
-  --r-bold-color: #ffb86c;
-  --r-italic-color: #f1fa8c;
-  --r-inline-code-color: #50fa7b;
-  --r-list-bullet-color: #8be9fd;
 }
 
 .reveal strong,

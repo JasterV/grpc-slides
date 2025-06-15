@@ -1,6 +1,3 @@
----
----
-
 # Learning gRPC
 
 Victor Martinez
@@ -221,21 +218,48 @@ Give a short example of why it is backward and forward compatible. Mention tags.
 ## Defining messages
 
 ```protobuf
-// amend_termination/request/v1/request.proto
 syntax = "proto3";
 
-package amend_termination.request.v1;
+package decline_renewal.request.v1;
 
-message AmendTerminationRequest {
+import "google/protobuf/timestamp.proto";
+
+message DeclineRenewalRequest {
   string policy_id = 1;
   google.protobuf.Timestamp requested_at = 2;
-  google.protobuf.Timestamp interruption_at = 3;
-  optional string description = 4;
+  optional string description = 3;
   oneof reason {
-    CustomerTerminateReason customer = 5;
-    PrimaTerminateReason prima = 6;
+    CustomerDeclineRenewalReason customer = 4;
   }
 }
+
+enum CustomerDeclineRenewalReason {
+  CUSTOMER_DECLINE_RENEWAL_REASON_UNSPECIFIED = 0;
+  CUSTOMER_DECLINE_RENEWAL_REASON_COMPETITOR_OFFER = 1;
+  CUSTOMER_DECLINE_RENEWAL_REASON_VEHICLE_SOLD = 2;
+  CUSTOMER_DECLINE_RENEWAL_REASON_VEHICLE_NOT_PURCHASED = 3;
+  CUSTOMER_DECLINE_RENEWAL_REASON_VEHICLE_DEREGISTRATION = 4;
+  CUSTOMER_DECLINE_RENEWAL_REASON_NO_INSURANCE_WANTED = 5;
+  CUSTOMER_DECLINE_RENEWAL_REASON_DOES_NOT_KNOW = 6;
+  CUSTOMER_DECLINE_RENEWAL_REASON_WANTS_GREEN_CARD = 7;
+  CUSTOMER_DECLINE_RENEWAL_REASON_INCORRECT_EFFECTIVE_DATE = 8;
+  CUSTOMER_DECLINE_RENEWAL_REASON_INCORRECT_PERSONAL_DATA = 9;
+  CUSTOMER_DECLINE_RENEWAL_REASON_INCORRECT_DATA_OTHER = 10;
+}
+```
+
+---
+
+## Defining messages
+
+```protobuf
+syntax = "proto3";
+
+package decline_renewal.response.v1;
+
+message DeclineRenewalResponse {
+  string policy_id = 1;
+}  
 ```
 
 ---
@@ -243,16 +267,26 @@ message AmendTerminationRequest {
 ## Defining a service
 
 ```protobuf
-// service/v1/service.proto
 syntax = "proto3";
 
 package service.v1;
 
-import "amend_termination/request/v1/request.proto";
-import "amend_termination/response/v1/response.proto";
+import "es_policy_grpc/messages/amend_termination/request/v1/request.proto";
+import "es_policy_grpc/messages/amend_termination/response/v1/response.proto";
+// Skipping other imports for the sake of the slide
 
 service PolicyManagementService {
-  rpc AmendTermination(AmendTerminationRequest) returns (AmendTerminationResponse);
+  rpc AmendTermination(amend_termination.request.v1.AmendTerminationRequest)
+    returns (amend_termination.response.v1.AmendTerminationResponse);
+
+  rpc TerminatePolicy(terminate_policy.request.v1.TerminatePolicyRequest)
+    returns (terminate_policy.response.v1.TerminatePolicyResponse);
+
+  rpc WithdrawPolicy(withdraw_policy.request.v1.WithdrawPolicyRequest)
+    returns (withdraw_policy.response.v1.WithdrawPolicyResponse);
+
+  rpc DeclineRenewal(decline_renewal.request.v1.DeclineRenewalRequest)
+    returns (decline_renewal.response.v1.DeclineRenewalResponse);
 }
 ```
 
@@ -339,19 +373,30 @@ These are only a few notable features, it provides more for sure
 
 ```rust
 // build.rs
-
-let mut prost_build = prost_build::Config::new();
-
-prost_build.compile_protos(
-    &["<path_to_proto_messages>"],
-    &["proto"],
-)?;
-
-tonic_build::configure()
-    .compile_protos(
-        &["proto/es_policy_grpc/service/v1/service.proto"],
+    let mut prost_build = prost_build::Config::new();
+    prost_build.protoc_arg("--experimental_allow_proto3_optional");
+    prost_build.compile_protos(
+        &[
+            "proto/es_policy_grpc/messages/terminate_policy/request/v1/request.proto",
+            "proto/es_policy_grpc/messages/terminate_policy/response/v1/response.proto",
+            "proto/es_policy_grpc/messages/withdraw_policy/request/v1/request.proto",
+            "proto/es_policy_grpc/messages/withdraw_policy/response/v1/response.proto",
+            "proto/es_policy_grpc/messages/decline_renewal/request/v1/request.proto",
+            "proto/es_policy_grpc/messages/decline_renewal/response/v1/response.proto",
+            "proto/es_policy_grpc/messages/amend_termination/request/v1/request.proto",
+            "proto/es_policy_grpc/messages/amend_termination/response/v1/response.proto",
+        ],
         &["proto"],
     )?;
+
+    tonic_build::configure()
+        .protoc_arg("--experimental_allow_proto3_optional")
+        .compile_protos(
+            &["proto/es_policy_grpc/service/v1/service.proto"],
+            &["proto"],
+        )
+        .unwrap();
+    Ok(())
 ```
 
 note:
@@ -363,6 +408,22 @@ First we need to talk about how do we generate code from our protobuf definition
 
 ```rust
 // lib.rs
+
+pub mod messages {
+    pub mod terminate_policy {
+        pub mod request {
+            pub mod v1 {
+                include!(concat!(env!("OUT_DIR"), "/es_policy_grpc.messages.terminate_policy.request.v1.rs"));
+            }
+        }
+
+        pub mod response {
+            pub mod v1 {
+                include!(concat!(env!("OUT_DIR"), "/es_policy_grpc.messages.terminate_policy.response.v1.rs"));
+            }
+        }
+    }
+}
 
 pub mod policy_service {
     pub mod v1 {
@@ -397,13 +458,15 @@ We get a trait generated from the Protobuf Service definition
 
 ```rust
 // main.rs
+use tonic::Server as GrpcServer;
+use es_policy_grpc::policy_service::v1::PolicyManagementServiceServer as PolicyManagementServerStub;
 
 let server = 
-	// gRPC server implemented on top of HTTP2
-	Server::builder() 
+	// gRPC server provided by Tonic
+	GrpcServer::builder() 
 		.add_service(
-			// Policy Management Server Stub
-			PolicyManagementServiceServer::new(
+			// Generated Policy Management Server Stub
+			PolicyManagementServerStub::new(
 				// Implementation of the service
 				PolicyManagementServiceImpl::new(application)
 			) 
@@ -424,17 +487,29 @@ Highlight the fact that at the end of the day the gRPC server will be listening 
 ## Building a client
 
 ```rust
-let mut client = 
-	// Auto-generated client stub
-	PolicyManagementServiceClient::connect("http://[::1]:50051").await?;
+// Auto-generated client stub
+use es_policy_grpc::policy_service::v1::PolicyManagementServiceClient as PolicyManagementClientStub;
+use es_policy_grpc::messages::decline_renewal::request::v1::{
+    DeclineRenewalRequest,
+    DeclineRenewalReason,
+    CustomerDeclineRenewalReason
+};
+use tonic::{metadata::MetadataValue, Request};
 
-let mut request = tonic::Request::new(GenerateContractRequest {
-    // ..
+let mut client = PolicyManagementClientStub::connect("http://[::1]:50051").await?;
+
+let mut request = Request::new(DeclineRenewalRequest {
+    policy_id: Uuid::new_v4(),
+    requested_at: DateTime::now(),
+    description: Some("dummy".into()),
+    reason: DeclineRenewalReason::Customer(
+        CustomerDeclineRenewalReason::VehicleSold
+    )
 });
 
 let token: MetadataValue<_> = "Bearer some-auth-token".parse()?;
 
-request.metadata_mut.insert("authentication", token);
+request.metadata_mut.insert(http::AUTHORIZATION, token);
 
 let _response = client.generate_contract(request).await?;
 ```
@@ -455,14 +530,17 @@ They allow you to:
 ## Interceptors in practice
 
 ```rust
+use es_policy_grpc::policy_service::v1::PolicyManagementServiceServer as PolicyManagementServerStub;
+use tonic::{metadata::MetadataValue, Request, Response, Status};
+
 fn check_auth(req: Request<()>) -> Result<Request<()>, Status> {
-    match req.metadata().get("authorization") {
+    match req.metadata().get(http::AUTHORIZATION) {
         Some(t) if is_valid(t) => Ok(req),
         _ => Err(Status::unauthenticated("No valid auth token")),
     }
 }
 
-let svc = PolicyManagementServiceServer::with_interceptor(
+let svc = PolicyManagementServerStub::with_interceptor(
 	PolicyManagementServiceImpl::new(application),
 	check_auth
 );
