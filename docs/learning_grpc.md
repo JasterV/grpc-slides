@@ -410,19 +410,20 @@ First we need to talk about how do we generate code from our protobuf definition
 // lib.rs
 
 pub mod messages {
-    pub mod terminate_policy {
+    pub mod decline_renewal {
         pub mod request {
             pub mod v1 {
-                include!(concat!(env!("OUT_DIR"), "/es_policy_grpc.messages.terminate_policy.request.v1.rs"));
+                include!(concat!(env!("OUT_DIR"), "/es_policy_grpc.messages.decline_renewal.request.v1.rs"));
             }
         }
 
         pub mod response {
             pub mod v1 {
-                include!(concat!(env!("OUT_DIR"), "/es_policy_grpc.messages.terminate_policy.response.v1.rs"));
+                include!(concat!(env!("OUT_DIR"), "/es_policy_grpc.messages.decline_renewal.response.v1.rs"));
             }
         }
     }
+    // ..
 }
 
 pub mod policy_service {
@@ -442,10 +443,10 @@ We need to expose the generated code through our lib.rs
 
 ```rust
 pub trait PolicyManagementService {
-    async fn withdraw_policy(
+    async fn decline_renewal(
         &self,
-        request: Request<WithdrawPolicyRequest>,
-    ) -> Result<Response<WithdrawPolicyResponse>, Status>
+        request: Request<DeclineRenewalRequest>,
+    ) -> Result<Response<DeclineRenewalResponse>, Status>
 	// ...
 }
 ```
@@ -460,8 +461,8 @@ We get a trait generated from the Protobuf Service definition
 
 ```rust
 use es_policy_grpc::policy_service::v1::PolicyManagementService;
-use es_policy_grpc::messages::withdraw_policy::request::v1::WithdrawPolicyRequest;
-use es_policy_grpc::messages::withdraw_policy::response::v1::WithdrawPolicyResponse;
+use es_policy_grpc::messages::decline_renewal::request::v1::DeclineRenewalyRequest;
+use es_policy_grpc::messages::decline_renewal::response::v1::DeclineRenewalResponse;
 use tonic::{Request, Response, Status};
 
 pub struct PolicyManagementServiceImpl {
@@ -469,18 +470,21 @@ pub struct PolicyManagementServiceImpl {
 }
 
 impl PolicyManagementService for PolicyManagementServiceImpl {
-    async fn withdraw_policy(
+    async fn decline_renewal(
         &self,
-        request: Request<WithdrawPolicyRequest>,
-    ) -> Result<Response<WithdrawPolicyResponse>, Status> {
+        request: Request<DeclineRenewalRequest>,
+    ) -> Result<Response<DeclineRenewalResponse>, Status> {
         let request = request.into_inner();
 
         let policy_id = Uuid::parse_str(&request.policy_id).unwrap();
-        let details = request.try_to_domain().unwrap();
 
-        self.application.cancel_policy(policy_id, details).await.unwrap()
+        let policy = self.application.find_policy(policy_id).await.unwrap();
 
-        Ok(Response::new(WithdrawPolicyResponse {
+        let details: TerminateDetails = request.try_to_domain(policy.expiration_date()).unwrap()
+
+        self.application.cancel_policy(policy_id.into(), details).await;
+
+        Ok(Response::new(DeclineRenewalResponse {
             policy_id: policy_id.to_string(),
         }))
     }
