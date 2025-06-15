@@ -231,7 +231,11 @@ section.has-light-background h6 {
   font-style: italic;
 }
 
-.reveal pre {
+/*********************************************
+ * CODE
+ *********************************************/
+
+.reveal .code-wrapper {
   display: block;
   position: relative;
   margin: var(--r-block-margin) auto;
@@ -240,30 +244,17 @@ section.has-light-background h6 {
   font-family: var(--r-code-font);
   line-height: 1.2em;
   box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
-  inline-size: min-content;
   max-width: 90%;
 }
 
-.reveal code {
-  font-family: var(--r-code-font);
-  text-transform: none;
-  tab-size: 2;
-}
-
-.reveal pre code {
-  display: block;
-  padding: 5px;
-  max-height: 400px;
-  word-wrap: break-word;
-  overflow-wrap: break-word;
-}
-
-.reveal .code-wrapper {
-  white-space: normal;
-}
-
 .reveal .code-wrapper code {
-  white-space: pre;
+  max-height: 400px;
+  font-family: var(--r-code-font);
+  tab-size: 2;
+  white-space: pre-wrap;
+  overflow-x: hidden;
+  overflow-wrap: break-word;
+  overflow-y: auto;
 }
 
 .reveal table {
