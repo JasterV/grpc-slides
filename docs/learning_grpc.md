@@ -35,7 +35,7 @@ Things were shared in plain non secured text.
 [1] WHITE, J. E. A high-level framework for network-based resource sharing. In Proc. National Computer Conference, (June 1976).
 
 ---
-![image](assets/rpc_architecture.png)
+![image](assets/images/rpc_architecture.png)
 
 <a style="font-size: 20px;" href="http://birrell.org/andrew/papers/ImplementingRPC.pdf">
 http://birrell.org/andrew/papers/ImplementingRPC.pdf
@@ -89,7 +89,7 @@ In the paper mentioned above, they wrote the interface using the Mesa interface 
 
 ---
 
-<img alt="grpc" src="assets/grpc-logo.png" style="width: 600px;" />
+<img alt="grpc" src="assets/images/grpc-logo.png" style="width: 600px;" />
 
 *gRPC is a modern open source high performance Remote Procedure Call (RPC) framework that can run in any environment.*
 
@@ -139,7 +139,7 @@ Explain multiplexing and server push
 
 ### 4 types of RPC supported
 
-![image](assets/rpc_types.svg)
+![image](assets/images/rpc_types.svg)
 
 note:
 
@@ -321,17 +321,17 @@ Give a short example of why it is backward and forward compatible. Mention tags.
 ## gRPC in the Rust ecosystem
 
 
-<img alt="grpc" src="assets/grpc-logo.png" style="width: 200px;" />
+<img alt="grpc" src="assets/images/grpc-logo.png" style="width: 200px;" />
 
 :heart:
 
 
-<img alt="rust logo" src="assets/rust.svg" style="width: 100px;" />
+<img alt="rust logo" src="assets/images/rust.svg" style="width: 100px;" />
 
 ---
 # Tonic
 
-<img alt="tonic logo" src="assets/tonic.svg" style="width: 200px;" />
+<img alt="tonic logo" src="assets/images/tonic.svg" style="width: 200px;" />
 
 <br />
 
@@ -568,7 +568,7 @@ Let's dive into Tower
 ---
 # Tower
 
-<img alt="tower" src="assets/tower.png" style="width: 200px;" />
+<img alt="tower" src="assets/images/tower.png" style="width: 200px;" />
 
 note:
 
@@ -644,7 +644,7 @@ Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> Starsky service
 
 ---
 
-<img alt="tower" src="assets/tower-layers-diagram.svg" style="max-width: 50%;" />
+<img alt="tower" src="assets/images/tower-layers-diagram.svg" style="max-width: 50%;" />
 ---
 
 Now let's dive into real middleware implementations

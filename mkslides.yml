@@ -1,6 +1,8 @@
 slides:
     highlight_theme: tokyo-night-dark
-    theme: dracula
+    theme: docs/assets/themes/dracula.css
+    template: docs/assets/templates/slideshow.html.jinja
 revealjs:
     history: true
     slideNumber: c/t
+    jumpToSlide: true
