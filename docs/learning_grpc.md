@@ -176,7 +176,8 @@ It is important to explain that these features might differ from language to lan
 
 - **Health check**: gRPC specifies a standard service API ([health/v1](https://github.com/grpc/grpc-proto/blob/master/grpc/health/v1/health.proto)) for performing health check calls against gRPC servers. An implementation of this service is provided, but you are responsible for updating the health status of your services. It is pluggable, and some languages might not provide it.
 ---
-## Protocol buffers
+
+# Protocol buffers
 
 *Protocol Buffers are language-neutral, platform-neutral extensible mechanisms for serializing structured data.*
 
@@ -202,7 +203,19 @@ note:
 Here we will focus on the IDL and the tooling, we won't focus on the serialization format.
 
 ---
-## Protobufs as an Interface Definition Language
+
+## Remarkable features of Protocol buffers
+
+- **Strongly typed** data
+- **Language** and **platform neutral**
+- **Compact binary format**
+- Support for **RPC service definition**
+- **Backward** and **Forward compatibility**
+
+note:
+
+Give a short example of why it is backward and forward compatible. Mention tags.
+
 ---
 
 ## Defining messages
@@ -242,20 +255,6 @@ service PolicyManagementService {
   rpc AmendTermination(AmendTerminationRequest) returns (AmendTerminationResponse);
 }
 ```
-
----
-
-## Remarkable features of Protocol buffers
-
-- **Strongly typed** data
-- **Language** and **platform neutral**
-- **Compact binary format**
-- Support for **RPC service definition**
-- **Backward** and **Forward compatibility**
-
-note:
-
-Give a short example of why it is backward and forward compatible. Mention tags.
 
 ---
 ## The protoc compiler
