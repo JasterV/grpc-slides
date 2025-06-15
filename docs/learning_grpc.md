@@ -337,15 +337,15 @@ Codegen tools need to be used to generate the client and server stubs that will 
 ---
 ### Features
 
-- **TLS**
-- **Load balancing**
-- RPC cancellation via **timeouts**
-- Request/Response **compression**
-- Bidirectional **streaming**
 - **Health check** of services
 - **Interceptors** 
 - **Reflection**
-- Client & Server **stub generation**
+- **Code generation** from proto definitions
+- RPC cancellation via **timeouts**
+- Bidirectional **streaming**
+- **Load balancing**
+- Request/Response **compression**
+- **TLS**
 - Extensible via **Tower** services
 
 note:
@@ -353,7 +353,7 @@ note:
 These are only a few notable features, it provides more for sure
 
 ---
-### Generate code from Proto definitions :gear:
+### Generating code from Proto definitions :gear:
 
 ```rust
 // build.rs
@@ -629,7 +629,9 @@ Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> Starsky service
 
 ---
 
-<img alt="tower" src="assets/images/tower-layers-diagram.svg" style="max-width: 50%;" />
+#### Building a layered service
+
+<img alt="tower" src="assets/images/layers-diagram.svg" style="max-width: 45%;" />
 ---
 
 Now let's dive into real middleware implementations
