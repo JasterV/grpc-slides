@@ -12,10 +12,7 @@ Remote Procedure Calls.
 
 An idea to extend transfer of control and transmission of data from one machine to another.
 
-<a style="font-size: 20px;" href="http://birrell.org/andrew/papers/ImplementingRPC.pdf">
-http://birrell.org/andrew/papers/ImplementingRPC.pdf
-</a>
-
+[http://birrell.org/andrew/papers/ImplementingRPC.pdf](http://birrell.org/andrew/papers/ImplementingRPC.pdf)
 
 note:
 
@@ -35,11 +32,10 @@ Things were shared in plain non secured text.
 [1] WHITE, J. E. A high-level framework for network-based resource sharing. In Proc. National Computer Conference, (June 1976).
 
 ---
-![image](assets/images/rpc_architecture.png)
 
-<a style="font-size: 20px;" href="http://birrell.org/andrew/papers/ImplementingRPC.pdf">
-http://birrell.org/andrew/papers/ImplementingRPC.pdf
-</a>
+<img alt="RPC implementation" src="assets/images/rpc_architecture.png" style="width: 60%;" />
+
+[http://birrell.org/andrew/papers/ImplementingRPC.pdf](http://birrell.org/andrew/papers/ImplementingRPC.pdf)
 
 note:
 
@@ -68,17 +64,11 @@ service PhoneService {
 }
 ```
 
-<p style="font-size: 26px;">
 Codegen tools will generate gRPC stubs from IDL code
-</p>
 
-<p style="font-size: 26px;">
 An example of Thrift, an IDL used in Facebook's RPC framework
-</p>
 
-<a style="font-size: 20px;" href="https://github.com/facebook/fbthrift">
-https://github.com/facebook/fbthrift
-</a>
+[https://github.com/facebook/fbthrift](https://github.com/facebook/fbthrift)
 
 
 note:
@@ -97,9 +87,7 @@ In the paper mentioned above, they wrote the interface using the Mesa interface 
 
 *gRPC is a modern open source high performance Remote Procedure Call (RPC) framework that can run in any environment.*
 
-<a style="font-size: 26px;" href="https://grpc.io/">
-https://grpc.io/
-</a>
+[https://grpc.io/](https://grpc.io/)
 
 note:
 
@@ -156,9 +144,7 @@ Key-value pairs of data used to provide additional information about a call.
 
 Implemented using HTTP/2 headers.
 
-<a style="font-size: 20px;" href="https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md">
-https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md
-</a>
+[https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md)
 
 note:
 
@@ -295,9 +281,7 @@ note:
 - **Editor integration**
 - And more!
 
-<a style="font-size: 20px;" href="https://buf.build/product/cli">
-https://buf.build/product/cli
-</a>
+[https://buf.build/product/cli](https://buf.build/product/cli)
 
 note:
 
@@ -305,26 +289,24 @@ Explain that it builds on top of protoc. Be very short here, just mention the to
 
 ---
 
-## gRPC in the Rust ecosystem
+# gRPC in the Rust ecosystem
 
 
-<img alt="grpc" src="assets/images/grpc-logo.png" style="width: 200px;" />
+<img alt="grpc" src="assets/images/grpc-logo.png" style="width: 300px;" />
 
 :heart:
 
 
-<img alt="rust logo" src="assets/images/rust.svg" style="width: 100px;" />
+<img alt="rust logo" src="assets/images/rust.svg" style="width: 300px;" />
 
 ---
 # Tonic
 
-<img alt="tonic logo" src="assets/images/tonic.svg" style="width: 150px;" />
+<img alt="tonic logo" src="assets/images/tonic.svg" style="width: 200px;" />
 
 *A gRPC over HTTP/2 rust implementation focused on high performance, interoperability, and flexibility*
 
-<a style="font-size: 24px;" href="https://github.com/hyperium/tonic">
-https://github.com/hyperium/tonic
-</a>
+[https://github.com/hyperium/tonic](https://github.com/hyperium/tonic)
 
 note:
 
@@ -491,9 +473,7 @@ let svc = PolicyManagementServiceServer::with_interceptor(
 
 Tonic provides a health check service implementing a standard gRPC health checking protocol.
 
-<a style="font-size: 20px;" href="https://github.com/grpc/grpc/blob/master/doc/health-checking.md">
-https://github.com/grpc/grpc/blob/master/doc/health-checking.md
-</a>
+[https://github.com/grpc/grpc/blob/master/doc/health-checking.md](https://github.com/grpc/grpc/blob/master/doc/health-checking.md)
 
 note:
 
@@ -516,13 +496,9 @@ service Health {
 }
 ```
 
-<p style="font-size: 28px;">
 This definition is provided by the official gRPC docs, each language runtime might implement it or not.
-</p>
 
-<a style="font-size: 20px;" href="https://github.com/grpc/grpc/blob/master/doc/health-checking.md">
-https://github.com/grpc/grpc/blob/master/doc/health-checking.md
-</a>
+[https://github.com/grpc/grpc/blob/master/doc/health-checking.md](https://github.com/grpc/grpc/blob/master/doc/health-checking.md)
 ---
 ## Enabling the health service
 
@@ -631,7 +607,7 @@ Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> Starsky service
 
 ## Building a layered service
 
-<img alt="tower" src="assets/images/layers-diagram.svg" style="max-width: 45%;" />
+<img alt="tower" src="assets/images/layers-diagram.svg" style="max-width: 35%;" />
 ---
 
 Now let's dive into real middleware implementations
@@ -967,6 +943,6 @@ It is this simple :)
 
 ---
 
-## Thank you for your time 
+# Thank you for your time 
 
 :heart:
