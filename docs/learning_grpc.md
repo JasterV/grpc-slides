@@ -6,9 +6,10 @@
 Victor Martinez
 
 ---
-## First, what is RPC?
 
-Remote Procedure Calls.
+# First, what is RPC?
+
+It stands for Remote Procedure Calls.
 
 An idea to extend transfer of control and transmission of data from one machine to another.
 
@@ -97,7 +98,7 @@ google Remote procedure calls
 
 ---
 
-## Why a framework?
+# Why a framework?
 
 gRPC dictates how you will build your network interface.
 
@@ -131,7 +132,7 @@ Explain multiplexing and server push
 
 ## 4 types of RPC supported
 
-![image](assets/images/rpc_types.svg)
+<img alt="rpc types" src="assets/images/rpc_types.svg" style="width: 70%;" />
 
 note:
 
