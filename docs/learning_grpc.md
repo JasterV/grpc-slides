@@ -56,7 +56,7 @@ They auto-generated the client and server stubs:
 ---
 ### Interface Definition Language
 
-```protobuf
+```thrift
 struct Phone {
   1: i32 id,
   2: string number,
@@ -67,6 +67,10 @@ service PhoneService {
   list<Phone> findAll()
 }
 ```
+
+<p style="font-size: 26px;">
+Codegen tools will generate gRPC stubs from IDL code
+</p>
 
 <p style="font-size: 26px;">
 An example of Thrift, an IDL used in Facebook's RPC framework
@@ -167,13 +171,13 @@ Can be useful for: Authentication & tracing
 ---
 ### And many more features
 
-- **Flow control** for streaming
-- RPC automatic & manual **cancellations**
-- **Reflection** (Service discoverability & ease debugging)
-- **Load balancing** (Client requests can be load balanced between multiple servers)
-- Call **retries**
 - **Health checking** (Service-specific health checking)
 - **Interceptors** (Middleware for RPCs)
+- **Reflection** (Service discoverability & ease debugging)
+- RPC automatic & manual **cancellations**
+- Call **retries**
+- **Flow control** for streaming
+- **Load balancing** (Client requests can be load balanced between multiple servers)
 
 note:
 
@@ -214,6 +218,28 @@ Here we will focus on the IDL and the tooling, we won't focus on the serializati
 ### Protobufs as an Interface Definition Language
 ---
 
+### Defining messages
+
+```protobuf
+// amend_termination/request/v1/request.proto
+syntax = "proto3";
+
+package amend_termination.request.v1;
+
+message AmendTerminationRequest {
+  string policy_id = 1;
+  google.protobuf.Timestamp requested_at = 2;
+  google.protobuf.Timestamp interruption_at = 3;
+  optional string description = 4;
+  oneof reason {
+    CustomerTerminateReason customer = 5;
+    PrimaTerminateReason prima = 6;
+  }
+}
+```
+
+---
+
 ### Defining a service
 
 ```protobuf
@@ -226,33 +252,23 @@ import "amend_termination/request/v1/request.proto";
 import "amend_termination/response/v1/response.proto";
 
 service PolicyManagementService {
-  rpc AmendTermination(amend_termination.request.v1.AmendTerminationRequest) returns (amend_termination.response.v1.AmendTerminationResponse);
+  rpc AmendTermination(AmendTerminationRequest) returns (AmendTerminationResponse);
 }
 ```
 
 ---
-### Defining messages
 
-```protobuf
-// amend_termination/request/v1/request.proto
-syntax = "proto3";
+### Remarkable features of Protocol buffers
 
-package amend_termination.request.v1;
+- **Strongly typed** data
+- **Language** and **platform neutral**
+- **Compact binary format**
+- Support for **RPC service definition**
+- **Backward and Forward compatibility**
 
-import "terminate_policy/request/v1/request.proto";
-import "google/protobuf/timestamp.proto";
+note:
 
-message AmendTerminationRequest {
-  string policy_id = 1;
-  google.protobuf.Timestamp requested_at = 2;
-  google.protobuf.Timestamp interruption_at = 3;
-  optional string description = 4;
-  oneof reason {
-    terminate_policy.request.v1.CustomerTerminateReason customer = 5;
-    terminate_policy.request.v1.PrimaTerminateReason prima = 6;
-  }
-}
-```
+Give a short example of why it is backward and forward compatible. Mention tags.
 
 ---
 ### The protoc compiler
@@ -289,35 +305,6 @@ Explain that it builds on top of protoc. Be very short here, just mention the to
 
 ---
 
-### Buf CLI
-
-```bash
-buf format
-```
-
-```bash
-buf lint
-```
-
-```bash
-buf breaking --against ".git#branch=master"
-```
-
-
----
-### Remarkable features of Protocol buffers
-
-- **Strongly typed** data
-- **Language** and **platform neutral**
-- **Compact binary format**
-- **Backward and Forward compatibility**
-- Support for **RPC service definition**
-
-note:
-
-Give a short example of why it is backward and forward compatible. Mention tags.
-
----
 ## gRPC in the Rust ecosystem
 
 
@@ -331,17 +318,15 @@ Give a short example of why it is backward and forward compatible. Mention tags.
 ---
 # Tonic
 
-<img alt="tonic logo" src="assets/images/tonic.svg" style="width: 200px;" />
+<img alt="tonic logo" src="assets/images/tonic.svg" style="width: 150px;" />
 
-<br />
+*A gRPC over HTTP/2 rust implementation focused on high performance, interoperability, and flexibility*
 
 <a style="font-size: 24px;" href="https://github.com/hyperium/tonic">
 https://github.com/hyperium/tonic
 </a>
 
 note:
-
-Built on top of Tower, Tonic is a gRPC over HTTP/2 implementation focused on **high performance**, **interoperability**, and **flexibility**.
 
 It has first class support for async/await.
 
