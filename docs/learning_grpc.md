@@ -350,17 +350,18 @@ Mechanism to layer services. It allows us to wrap a generic service with another
 
 ```rust
 ServiceBuilder::new()
-    .timeout(Duration::from_secs(10))
-    .layer(OpenTelemetryServerTracingLayer::new_for_grpc())
+    .layer(TimeoutLayer::new(Duration::from_secs(10)))
+    .layer(OpenTelemetryTracingLayer::new())
     .layer(JwtAuthLayer::new(jwks_client, "starsky"))
-    .named_layer(StarskyServer::new(starsky_service));
+    .service(PolicyManagementServerStub::new(service));
 ```
 
 note:
 
-A real example of a layered service from Starsky. Slightly simplified for the sake of the presentation.
+A real example of a layered service. Slightly simplified for the sake of the presentation.
+
 The flow will be the following: 
-Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> Starsky service
+Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> PM service
 
 ---
 
@@ -404,6 +405,10 @@ note:
 These are only a few notable features, it provides more for sure
 
 ---
+
+## Let's build a library with generated Rust code
+
+---
 ## Generating code from Proto definitions :gear:
 
 ```rust
@@ -438,7 +443,7 @@ note:
 First we need to talk about how do we generate code from our protobuf definitions.
 
 ---
-## Expose the generated code as a library
+## Exposing the generated code as a library
 
 ```rust
 // lib.rs
@@ -470,6 +475,10 @@ pub mod policy_service {
 note:
 
 We need to expose the generated code through our lib.rs
+
+---
+
+## Let's build a gRPC application
 
 ---
 
@@ -542,8 +551,12 @@ let server =
 			PolicyManagementServerStub::new(
 				// Implementation of the service
 				PolicyManagementServiceImpl::new(application)
-			) 
-	);
+			)
+    ).add_service(
+        QuotingServerStub::new(
+            QuoteServiceImpl::new(application)
+        )
+    );
 
 let listener = TcpListener::bind(("0.0.0.0", grpc_port)).await?;
 
@@ -552,11 +565,14 @@ server.serve(listener).await?;
 
 note:
 
-Simple build of a Tonic Server. We will dive into how to add middleware later.
+Simple build of a Tonic Server.
 
-Highlight the fact that at the end of the day the gRPC server will be listening to a TCP port like any other HTTP2 server.
+- The GrpcServer acts as a Router.
+- The GrpcServer doesn't know how to unpack-pack messages, that is handled by each specific server stub.
+- The GrpcServer will be listening to a TCP port like an HTTP2 server.
 
 ---
+
 ## Building the client
 
 ```rust
@@ -592,79 +608,6 @@ note:
 What if we wanted to add those headers for every request? Now we talk about interceptors
 
 ---
-
-## Health checking gRPC services
-
-Tonic provides a health check service implementing a standard gRPC health checking protocol.
-
-[https://github.com/grpc/grpc/blob/master/doc/health-checking.md](https://github.com/grpc/grpc/blob/master/doc/health-checking.md)
-
-note:
-
-A GRPC service is used as the health checking mechanism. 
-
-Since it is a GRPC service itself, doing a health check is in the same format as a normal rpc. 
-
-It has rich semantics such as per-service health status. 
-
-The server has full control over the access of the health checking service.
-
----
-## Health service definition
-
-```protobuf
-syntax = "proto3";
-
-package grpc.health.v1;
-
-message HealthCheckRequest {
-  string service = 1;
-}
-
-message HealthCheckResponse {
-  enum ServingStatus {
-    UNKNOWN = 0;
-    SERVING = 1;
-    NOT_SERVING = 2;
-    SERVICE_UNKNOWN = 3; // Used only by the Watch method.
-  }
-  ServingStatus status = 1;
-}
-
-service Health {
-  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
-  rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);
-}
-```
-
-This definition is provided by the official gRPC docs, each language runtime might implement it or not.
-
-[https://github.com/grpc/grpc/blob/master/doc/health-checking.md](https://github.com/grpc/grpc/blob/master/doc/health-checking.md)
----
-## Enabling the health service
-
-```rust
-use es_policy_grpc::policy_service::v1::PolicyManagementServiceServer as PolicyManagementServerStub;
-use tonic_health::server::health_reporter;
-use tonic::Server as GrpcServer;
-
-let (health_reporter, health_service) = health_reporter();
-
-health_reporter
-    .set_serving::<PolicyManagementServerStub<PolicyManagementServiceImpl>>()
-    .await;
-
-GrpcServer::builder()
-	// Add other layers
-	.layer(..)
-	.add_service(health_service)
-	.serve(addr)
-	.await?;
-```
-
-note:
-
-Make it clear that we are using the `tonic-health` crate which doesn't come by default with `tonic`.
 
 ---
 
@@ -1034,6 +977,116 @@ GrpcServer::builder()
 note:
 
 It is this simple :)
+
+---
+
+## Extras
+
+Did we get here? :eyes:
+
+---
+
+## Health checking gRPC services
+
+Tonic provides a health check service implementing a standard gRPC health checking protocol.
+
+[https://github.com/grpc/grpc/blob/master/doc/health-checking.md](https://github.com/grpc/grpc/blob/master/doc/health-checking.md)
+
+note:
+
+A GRPC service is used as the health checking mechanism. 
+
+Since it is a GRPC service itself, doing a health check is in the same format as a normal rpc. 
+
+It has rich semantics such as per-service health status. 
+
+The server has full control over the access of the health checking service.
+
+---
+## Health service definition
+
+```protobuf
+syntax = "proto3";
+
+package grpc.health.v1;
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3; // Used only by the Watch method.
+  }
+  ServingStatus status = 1;
+}
+
+service Health {
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+  rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);
+}
+```
+
+This definition is provided by the official gRPC docs, each language runtime might implement it or not.
+
+[https://github.com/grpc/grpc/blob/master/doc/health-checking.md](https://github.com/grpc/grpc/blob/master/doc/health-checking.md)
+---
+## Enabling the health service
+
+```rust
+use es_policy_grpc::policy_service::v1::PolicyManagementServiceServer as PolicyManagementServerStub;
+use tonic_health::server::health_reporter;
+use tonic::Server as GrpcServer;
+
+let (health_reporter, health_service) = health_reporter();
+
+health_reporter
+    .set_serving::<PolicyManagementServerStub<PolicyManagementServiceImpl>>()
+    .await;
+
+GrpcServer::builder()
+	// Add other layers
+	.layer(..)
+	.add_service(health_service)
+	.serve(addr)
+	.await?;
+```
+
+note:
+
+Make it clear that we are using the `tonic-health` crate which doesn't come by default with `tonic`.
+
+---
+
+## Interceptors
+
+Interceptors are similar to middleware but with less flexibility.
+They allow you to:
+- Add/remove/check items in the metadata of each request. 
+- Cancel a request with a `Status`.
+---
+
+## Interceptors in practice
+
+```rust
+use es_policy_grpc::policy_service::v1::PolicyManagementServiceServer as PolicyManagementServerStub;
+use tonic::{metadata::MetadataValue, Request, Response, Status};
+
+fn check_auth(req: Request<()>) -> Result<Request<()>, Status> {
+    match req.metadata().get(http::AUTHORIZATION) {
+        Some(t) if is_valid(t) => Ok(req),
+        _ => Err(Status::unauthenticated("No valid auth token")),
+    }
+}
+
+let svc = PolicyManagementServerStub::with_interceptor(
+	PolicyManagementServiceImpl::new(application),
+	check_auth
+);
+```
 
 ---
 
