@@ -14,19 +14,11 @@ An idea to extend transfer of control and transmission of data from one machine 
 
 note:
 
-The concept dates back to 1976 [1]
-
-Building applications that required communicating with a separate machine was difficult and required big expertise
-
-This RPC implementation aimed to make it highly efficient (network-wise) as well as as simple to use as non-remote procedures.
-
-Make it more accessible to build distributed applications
-
-They aimed to provide secure communications with RPC.
-
-Things were shared in plain non secured text.
-
-The program structure would be based in the concept of Stubs.
+- The concept dates back to 1976 [1]
+- Back in the days building network application required big expertise and was not user friendly
+- They wanted to make it as easy to call a remote service as a local one, very user friendly
+- They wanted to make it efficient (Networks were very slow)
+- They wanted to make it secure (Networks were not secure)
 
 Five pieces of program are involved when making an RPC call:
 
@@ -141,11 +133,9 @@ https://protobuf.dev/
 
 note:
 
-It is also developed by google.
-
-Explain that it is the default binary serialization format supported by gRPC
-
-Many IDLs have been developed over time. Mozilla, Microsoft, IBM... and more developed their own internal RPC frameworks with their own IDLs [2]
+- Also developed by google
+- Default serialization format supported by gRPC
+- Interface Definition Language supported by gRPC
 
 [2] https://en.wikipedia.org/wiki/Interface_description_language
 
