@@ -6,9 +6,9 @@ Victor Martinez
 
 # First, what is RPC?
 
-It stands for Remote Procedure Calls.
-
 An idea to extend transfer of control and transmission of data from one machine to another.
+
+<img alt="RPC implementation" src="assets/images/rpc_architecture.png" style="width: 60%;" />
 
 [http://birrell.org/andrew/papers/ImplementingRPC.pdf](http://birrell.org/andrew/papers/ImplementingRPC.pdf)
 
@@ -26,17 +26,6 @@ They aimed to provide secure communications with RPC.
 
 Things were shared in plain non secured text.
 
-
-[1] WHITE, J. E. A high-level framework for network-based resource sharing. In Proc. National Computer Conference, (June 1976).
-
----
-
-<img alt="RPC implementation" src="assets/images/rpc_architecture.png" style="width: 60%;" />
-
-[http://birrell.org/andrew/papers/ImplementingRPC.pdf](http://birrell.org/andrew/papers/ImplementingRPC.pdf)
-
-note:
-
 The program structure would be based in the concept of Stubs.
 
 Five pieces of program are involved when making an RPC call:
@@ -47,37 +36,7 @@ They auto-generated the client and server stubs:
 
 `The user-stub and server-stub are automatically generated, by a program called Lupine.`
 
----
-## Interface Definition Language
-
-```thrift
-struct Phone {
-  1: i32 id,
-  2: string number,
-}
-
-service PhoneService {
-  Phone findById(1: i32 id),
-  list<Phone> findAll()
-}
-```
-
-Codegen tools will generate gRPC stubs from IDL code
-
-An example of Thrift, an IDL used in Facebook's RPC framework
-
-[https://github.com/facebook/fbthrift](https://github.com/facebook/fbthrift)
-
-
-note:
-
-Many IDLs have been developed over time. Mozilla, Microsoft, IBM... and more developed their own internal RPC frameworks with their own IDLs [2]
-
-In the paper mentioned above, they wrote the interface using the Mesa interface modules feature:
-
-`This generation is specified by use of Mesa interface modules. These are the basis of the Mesa (and Cedar) separate compilation and binding mechanism [9]. An interface module is mainly a list of procedure names, together with the types of their arguments and results`
-
-[2] https://en.wikipedia.org/wiki/Interface_description_language
+[1] WHITE, J. E. A high-level framework for network-based resource sharing. In Proc. National Computer Conference, (June 1976).
 
 ---
 
@@ -182,9 +141,13 @@ https://protobuf.dev/
 
 note:
 
+It is also developed by google.
+
 Explain that it is the default binary serialization format supported by gRPC
 
-It is also developed by google.
+Many IDLs have been developed over time. Mozilla, Microsoft, IBM... and more developed their own internal RPC frameworks with their own IDLs [2]
+
+[2] https://en.wikipedia.org/wiki/Interface_description_language
 
 ---
 
@@ -196,6 +159,8 @@ It is also developed by google.
 - The **serialization format**
 
 note:
+
+Explain what an IDL is
 
 Here we will focus on the IDL and the tooling, we won't focus on the serialization format.
 
@@ -332,6 +297,86 @@ Explain that it builds on top of protoc. Be very short here, just mention the to
 
 
 <img alt="rust logo" src="assets/images/rust.svg" style="width: 300px;" />
+
+---
+# Tower
+
+<img alt="tower" src="assets/images/tower.png" style="width: 200px;" />
+
+note:
+
+Tower is a library of modular and reusable components for building robust networking clients and servers.
+
+Tonic is built on top of Tower
+
+It's core abstraction is the Service, which we see in the next slide.
+
+It exposes already a set of basic reusable services to solve common networking patterns such as timeouts and rate limiting.
+
+---
+## Tower service
+
+```rust
+pub trait Service<Request> {
+    type Response;
+    type Error;
+    type Future: Future<Output = Result<Self::Response, Self::Error>>;
+
+    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>>;
+  
+    fn call(&mut self, req: Request) -> Self::Future;
+}
+```
+
+note:
+
+Tower’s fundamental abstraction.
+
+An asynchronous function from a `Request` to a `Response`.
+
+The `Service` trait is a simplified interface making it easy to write network applications in a modular and reusable way, decoupled from the underlying protocol.
+
+It immediately returns a `Future` representing the eventual completion of processing the request. 
+
+The processing may depend on calling other services. At some point in the future, the processing will complete, and the `Future` will resolve to a response or error.
+
+---
+## Layers
+
+```rust
+pub trait Layer<S> {
+    type Service;
+    
+    fn layer(&self, inner: S) -> Self::Service;
+}
+```
+
+note:
+
+Mechanism to layer services. It allows us to wrap a generic service with another one. It can be used to wrap a reusable service which is meant to act as a middleware around another service.
+
+---
+## Building a layered service
+
+```rust
+ServiceBuilder::new()
+    .timeout(Duration::from_secs(10))
+    .layer(OpenTelemetryServerTracingLayer::new_for_grpc())
+    .layer(JwtAuthLayer::new(jwks_client, "starsky"))
+    .named_layer(StarskyServer::new(starsky_service));
+```
+
+note:
+
+A real example of a layered service from Starsky. Slightly simplified for the sake of the presentation.
+The flow will be the following: 
+Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> Starsky service
+
+---
+
+## Building a layered service
+
+<img alt="tower" src="assets/images/layers-diagram.svg" style="max-width: 35%;" />
 
 ---
 # Tonic
@@ -557,34 +602,7 @@ note:
 What if we wanted to add those headers for every request? Now we talk about interceptors
 
 ---
-## Interceptors
 
-Interceptors are similar to middleware but with less flexibility.
-They allow you to:
-- Add/remove/check items in the metadata of each request. 
-- Cancel a request with a `Status`.
----
-
-## Interceptors in practice
-
-```rust
-use es_policy_grpc::policy_service::v1::PolicyManagementServiceServer as PolicyManagementServerStub;
-use tonic::{metadata::MetadataValue, Request, Response, Status};
-
-fn check_auth(req: Request<()>) -> Result<Request<()>, Status> {
-    match req.metadata().get(http::AUTHORIZATION) {
-        Some(t) if is_valid(t) => Ok(req),
-        _ => Err(Status::unauthenticated("No valid auth token")),
-    }
-}
-
-let svc = PolicyManagementServerStub::with_interceptor(
-	PolicyManagementServiceImpl::new(application),
-	check_auth
-);
-```
-
----
 ## Health checking gRPC services
 
 Tonic provides a health check service implementing a standard gRPC health checking protocol.
@@ -659,91 +677,13 @@ note:
 Make it clear that we are using the `tonic-health` crate which doesn't come by default with `tonic`.
 
 ---
-**What about more complex middleware? What if we need to also intercept responses?**
 
-Let's dive into Tower
+# Building middleware with Tower
 
----
-# Tower
-
-<img alt="tower" src="assets/images/tower.png" style="width: 200px;" />
-
-note:
-
-Tower is a library of modular and reusable components for building robust networking clients and servers.
-
-Tonic is built on top of Tower
-
-It's core abstraction is the Service, which we see in the next slide.
-
-It exposes already a set of basic reusable services to solve common networking patterns such as timeouts and rate limiting.
-
----
-## Tower service
-
-```rust
-pub trait Service<Request> {
-    type Response;
-    type Error;
-    type Future: Future<Output = Result<Self::Response, Self::Error>>;
-
-    fn poll_ready(&mut self, cx: &mut Context<'_>) -> Poll<Result<(), Self::Error>>;
-  
-    fn call(&mut self, req: Request) -> Self::Future;
-}
-```
-
-note:
-
-Tower’s fundamental abstraction.
-
-An asynchronous function from a `Request` to a `Response`.
-
-The `Service` trait is a simplified interface making it easy to write network applications in a modular and reusable way, decoupled from the underlying protocol.
-
-It immediately returns a `Future` representing the eventual completion of processing the request. 
-
-The processing may depend on calling other services. At some point in the future, the processing will complete, and the `Future` will resolve to a response or error.
-
----
-## Layers
-
-```rust
-pub trait Layer<S> {
-    type Service;
-    
-    fn layer(&self, inner: S) -> Self::Service;
-}
-```
-
-note:
-
-Mechanism to layer services. It allows us to wrap a generic service with another one. It can be used to wrap a reusable service which is meant to act as a middleware around another service.
-
----
-## Building a layered service
-
-```rust
-ServiceBuilder::new()
-    .timeout(Duration::from_secs(10))
-    .layer(OpenTelemetryServerTracingLayer::new_for_grpc())
-    .layer(JwtAuthLayer::new(jwks_client, "starsky"))
-    .named_layer(StarskyServer::new(starsky_service));
-```
-
-note:
-
-A real example of a layered service from Starsky. Slightly simplified for the sake of the presentation.
-The flow will be the following: 
-Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> Starsky service
+So, how can we take advantage of Tower in gRPC?
 
 ---
 
-## Building a layered service
-
-<img alt="tower" src="assets/images/layers-diagram.svg" style="max-width: 35%;" />
-
----
 ## Authorization middleware
 
 Auth0 M2M authorization
