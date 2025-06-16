@@ -23,7 +23,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install mkslides==1.0.6
+      - run: pip install mkslides==1.0.9
       - run: mkslides build docs/
       - uses: actions/upload-pages-artifact@v3
         with:
