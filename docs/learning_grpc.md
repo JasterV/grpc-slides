@@ -373,30 +373,29 @@ These are only a few notable features, it provides more for sure
 
 ```rust
 // build.rs
-    let mut prost_build = prost_build::Config::new();
-    prost_build.protoc_arg("--experimental_allow_proto3_optional");
-    prost_build.compile_protos(
-        &[
-            "proto/es_policy_grpc/messages/terminate_policy/request/v1/request.proto",
-            "proto/es_policy_grpc/messages/terminate_policy/response/v1/response.proto",
-            "proto/es_policy_grpc/messages/withdraw_policy/request/v1/request.proto",
-            "proto/es_policy_grpc/messages/withdraw_policy/response/v1/response.proto",
-            "proto/es_policy_grpc/messages/decline_renewal/request/v1/request.proto",
-            "proto/es_policy_grpc/messages/decline_renewal/response/v1/response.proto",
-            "proto/es_policy_grpc/messages/amend_termination/request/v1/request.proto",
-            "proto/es_policy_grpc/messages/amend_termination/response/v1/response.proto",
-        ],
-        &["proto"],
-    )?;
+let mut prost_build = prost_build::Config::new();
+prost_build.protoc_arg("--experimental_allow_proto3_optional");
+prost_build.compile_protos(
+    &[
+        "proto/es_policy_grpc/messages/terminate_policy/request/v1/request.proto",
+        "proto/es_policy_grpc/messages/terminate_policy/response/v1/response.proto",
+        "proto/es_policy_grpc/messages/withdraw_policy/request/v1/request.proto",
+        "proto/es_policy_grpc/messages/withdraw_policy/response/v1/response.proto",
+        "proto/es_policy_grpc/messages/decline_renewal/request/v1/request.proto",
+        "proto/es_policy_grpc/messages/decline_renewal/response/v1/response.proto",
+        "proto/es_policy_grpc/messages/amend_termination/request/v1/request.proto",
+        "proto/es_policy_grpc/messages/amend_termination/response/v1/response.proto",
+    ],
+    &["proto"],
+)?;
 
-    tonic_build::configure()
-        .protoc_arg("--experimental_allow_proto3_optional")
-        .compile_protos(
-            &["proto/es_policy_grpc/service/v1/service.proto"],
-            &["proto"],
-        )
-        .unwrap();
-    Ok(())
+tonic_build::configure()
+    .protoc_arg("--experimental_allow_proto3_optional")
+    .compile_protos(
+        &["proto/es_policy_grpc/service/v1/service.proto"],
+        &["proto"],
+    )
+    .unwrap();
 ```
 
 note:
