@@ -37,9 +37,11 @@ note:
 
 note:
 
-google Remote procedure calls
-
-"gRPC was initially created by Google, which has used a single general-purpose RPC infrastructure called **Stubby** to connect the large number of microservices running within and across its data centers. In March 2015, Google decided to build the next version of Stubby and make it open source. The result was **gRPC**"
+- google Remote procedure calls
+- Initially created by Google
+- Used to connect microservices across data centers
+- It used to be called Stubby
+- In march 2015 they decided to build and publish a next version called gRPC and make it open source
 
 ---
 
@@ -112,10 +114,14 @@ note:
 - Features might differ from language to language
 
 - **Flow control**: mechanism to ensure that a receiver of messages does not get overwhelmed by a fast sender
-
 - **Reflection**: Allows for clients without the generated client code to discover the gRPC services on the fly
-
 - **Health check**: A service is provided to monitor the health of specific services in your server
+- **Retries**:
+    - Enabled by default, with no default retry policy.
+    - By default retries low-level race conditions
+    - By default transparent retries are made:
+        - If the RPC never left the client
+        - If the RPC never reached the server application logic
 ---
 
 # Protocol buffers
@@ -159,7 +165,11 @@ Here we will focus on the IDL and the tooling, we won't focus on the serializati
 
 note:
 
-Give a short example of why it is backward and forward compatible. Mention tags.
+Compatibility notes:
+    - Field deletion compatibility is supported at a syntax level
+        - Via the use of a special keyword
+    - Fields not found will be set a default value always
+    - Extra not supported fields will be ignored
 
 ---
 
@@ -195,6 +205,13 @@ enum CustomerDeclineRenewalReason {
   CUSTOMER_DECLINE_RENEWAL_REASON_INCORRECT_DATA_OTHER = 10;
 }
 ```
+
+note:
+
+- Fields are uniquely identified with a numeric tag.
+- When deleting fields, their tag must be marked as reserved to ensure its never used again
+- Enums must always have a 0 variant "UNSPECIFIED" to be used as the default value
+- The engineer must follow a set of good practices to ensure backward/forward compatibility, not everything can be enforced by the compiler
 
 ---
 
@@ -238,6 +255,14 @@ service PolicyManagementService {
 }
 ```
 
+note:
+
+- Importing other definitions is allowed
+- "proto3" is the recommended edition to use
+- Packages have to define a namespace
+- Service definition is supported by the language as we see above
+- The 4 types of RPC are supported, above we only see Unary RPCs
+
 ---
 ## The protoc compiler
 
@@ -267,7 +292,8 @@ note:
 
 note:
 
-Explain that it builds on top of protoc. Be very short here, just mention the tool briefly. It is important because we use it.
+- Builds on top of protoc
+- Provides a very easy to use plugin and build system
 
 ---
 
@@ -278,7 +304,6 @@ Explain that it builds on top of protoc. Be very short here, just mention the to
 
 :heart:
 
-
 <img alt="rust logo" src="assets/images/rust.svg" style="width: 300px;" />
 
 ---
@@ -286,15 +311,11 @@ Explain that it builds on top of protoc. Be very short here, just mention the to
 
 <img alt="tower" src="assets/images/tower.png" style="width: 200px;" />
 
+*Library of modular and reusable components for building robust networking clients and servers*
+
 note:
 
-Tower is a library of modular and reusable components for building robust networking clients and servers.
-
-Tonic is built on top of Tower
-
-It's core abstraction is the Service, which we see in the next slide.
-
-It exposes already a set of basic reusable services to solve common networking patterns such as timeouts and rate limiting.
+- It exposes already a set of basic reusable services to solve common networking patterns such as timeouts and rate limiting.
 
 ---
 ## Tower service
@@ -313,15 +334,10 @@ pub trait Service<Request> {
 
 note:
 
-Tower’s fundamental abstraction.
-
-An asynchronous function from a `Request` to a `Response`.
-
-The `Service` trait is a simplified interface making it easy to write network applications in a modular and reusable way, decoupled from the underlying protocol.
-
-It immediately returns a `Future` representing the eventual completion of processing the request. 
-
-The processing may depend on calling other services. At some point in the future, the processing will complete, and the `Future` will resolve to a response or error.
+- Tower’s fundamental abstraction.
+- An asynchronous function from a `Request` to a `Response`.
+- It immediately returns a `Future` representing the eventual completion of processing the request.
+- It is a simplified interface making it easy to write network applications in a modular and reusable way, decoupled from the underlying protocol.
 
 ---
 ## Layers
@@ -336,7 +352,8 @@ pub trait Layer<S> {
 
 note:
 
-Mechanism to layer services. It allows us to wrap a generic service with another one. It can be used to wrap a reusable service which is meant to act as a middleware around another service.
+- A mechanism to layer services.
+- It is used to wrap services building this way a "layer" pattern
 
 ---
 ## Building a layered service
@@ -352,9 +369,6 @@ ServiceBuilder::new()
 note:
 
 A real example of a layered service. Slightly simplified for the sake of the presentation.
-
-The flow will be the following: 
-Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> PM service
 
 ---
 
@@ -373,11 +387,8 @@ Timeout -> SSRHL -> Tracing -> SSRHL -> Auth -> PM service
 
 note:
 
-It has first class support for async/await.
-
-The main goal of tonic is to provide a generic gRPC implementation over HTTP/2 framing. 
-
-Codegen tools need to be used to generate the client and server stubs that will encode and decode the binary data and deal with other gRPC features such as streaming.
+- Build on top of Tower
+- It has first class support for async/await.
 
 ---
 ## Features
@@ -395,7 +406,8 @@ Codegen tools need to be used to generate the client and server stubs that will 
 
 note:
 
-These are only a few notable features, it provides more for sure
+- We will focus on code generation, service implementation and client-server implementation
+- Later we will see examples of implementing middleware using Tower Layers
 
 ---
 
