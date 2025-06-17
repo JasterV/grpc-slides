@@ -685,7 +685,7 @@ So, how can we take advantage of Tower in gRPC?
 Auth0 M2M authorization
 
 ---
-## Authentication service
+## Authorization service
 
 ```rust
 // Tower Service used as a JWT Auth middleware.
@@ -698,15 +698,13 @@ pub struct JwtAuth<T: JwtDecoder, S> {
 
 note:
 
-First we build a struct that will contain a generic inner service protected by our auth service.
-
-The audience represents the audience set in Auth0, which is our API identifier.
-
-The JwksClient contains the public keys to verify the signature of incoming tokens.
+- This service acts as a middleware intercepting incoming requests before it gets to the inner service `S`.
+- The audience represents the Auth0 audience, which is our API identifier.
+- The jwt_decoder is able to verify tokens.
 
 ---
 
-## Authentication service
+## Authorization service
 
 ```rust
 impl<T: JwtDecoder, S> JwtAuth<T, S> {
@@ -731,15 +729,12 @@ impl<T: JwtDecoder, S> JwtAuth<T, S> {
 
 note:
 
-Here we implement the authentication logic, we are not implementing yet the service trait.
-
-I've simplified the code for the sake of the slide.
-
-We assume that `make_unauthorized_response` will build a gRPC unauthorized response.
+- Code is simplified for the sake of the slide.
+- let's assume that `make_unauthorized_response` will build an unauthorized response.
 
 ---
 
-## Authentication service
+## Authorization service
 
 ```rust
 use std::task::{Context, Poll};
@@ -775,11 +770,11 @@ where
 
 note:
 
-Note the use of `async move` inside `call` given that `call` is not defined as an async function on the trait definition
+- `async move` is used inside `call` because we need to return a `Future`
 
 ---
 
-## Authentication layer
+## Authorization layer
 
 ```rust
 // Reusable Tower Layer meant to wrap
@@ -799,13 +794,9 @@ impl<T: JwtDecoder> JwtAuthLayer<T> {
 }
 ```
 
-note:
-
-Although confusing, the purpose of the layer is to make the usage of the middleware more user-friendly
-
 ---
 
-## Authentication layer
+## Authorization layer
 
 ```rust
 impl<T, S> Layer<S> for JwtAuthLayer<T>
@@ -826,7 +817,7 @@ where
 
 note:
 
-What is done inside of the `layer` function could just be done manually, but it is done here for better user experience later.
+- The purpose of the layer is to take advantage of the Tower modularity features that the `Layer` trait offers
 
 ---
 ## Attaching it to our gRPC server
@@ -849,14 +840,11 @@ let server = GrpcServer::builder().add_service(authenticated_apis);
 
 note:
 
-Simplified version of our real server implementation in `es-be`
+- Simplified version of our real server implementation in `es-be`
 
 ---
-## Tracing Layer
 
-Let's build another Tower service.
-
-Interceptors are not the best fit, we want to trace responses too.
+## Tracing middleware
 
 ---
 
@@ -895,7 +883,7 @@ fn make_span<B>(request: &http::Request<B>) -> tracing::Span {
 
 note:
 
-Explain how this is a simplified version of the real implementation in `prima_tower`
+- Slightly simplified version of the real implementation
 
 ---
 
@@ -929,7 +917,7 @@ fn on_response<B>(response: &http::Response<B>, span: &tracing::Span) {
 
 note:
 
-We will see in a second how the span we receive by parameters is the same span we created when handling the request
+- We attach the response metadata to the current span
 
 ---
 
@@ -945,7 +933,7 @@ pub struct OpenTelemetryTracer<S> {
 
 note:
 
-We need to implement the service that will act as the tracing middleware
+- This service will act as tracing middleware
 
 ---
 
@@ -986,11 +974,11 @@ where
 
 note:
 
-Again, the code is simplified for the slides purpose.
+- The code is simplified for the slides purpose.
 
-Note how the same span is used to track the request and response.
+- The same span is used to track the request and response.
 
-Then that span is used as the parent span for the inner service call.
+- That span is used as the parent span for the inner service call.
 
 ---
 ## Tracing layer
