@@ -352,6 +352,19 @@ section.has-light-background h6 {
 }
 
 /*********************************************
+ * LAYOUT
+ *********************************************/
+
+.row {
+  display: flex;
+  flex-direction: row;
+}
+
+.column {
+  flex: 1;
+}
+
+/*********************************************
  * NAVIGATION CONTROLS
  *********************************************/
 .reveal .controls {

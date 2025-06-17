@@ -396,13 +396,11 @@ note:
 - **Health check** of services
 - **Interceptors** 
 - **Reflection**
-- **Code generation** from proto definitions
+- **Stub generation** from protos
 - RPC cancellation via **timeouts**
-- Bidirectional **streaming**
-- **Load balancing**
 - Request/Response **compression**
-- **TLS**
 - Extensible via **Tower** services
+- ...
 
 note:
 
@@ -445,7 +443,79 @@ tonic_build::configure()
 
 note:
 
-First we need to talk about how do we generate code from our protobuf definitions.
+- prost_build generates types from the message definitions
+- tonic_build generates the Client & Server stubs
+
+---
+
+## Generated types
+
+<div class="row">
+<div class="column">
+
+```rust
+// Generated Request
+pub struct DeclineRenewalRequest {
+    pub policy_id: String,
+    pub requested_at: Option<Timestamp>,
+    pub description: Option<String>,
+    pub reason: Option<Reason>,
+}
+
+pub enum Reason {
+    Customer(i32),
+}
+
+// Generated Response
+pub struct DeclineRenewalResponse {
+    pub policy_id: String,
+}    
+```
+</div>
+
+<div class="column">
+
+```rust
+#[repr(i32)]
+pub enum CustomerDeclineRenewalReason {
+    Unspecified = 0,
+    CompetitorOffer = 1,
+    VehicleSold = 2,
+    VehicleNotPurchased = 3,
+    VehicleDeregistration = 4,
+    NoInsuranceWanted = 5,
+    DoesNotKnow = 6,
+    WantsGreenCard = 7,
+    IncorrectEffectiveDate = 8,
+    IncorrectPersonalData = 9,
+    IncorrectDataOther = 10,
+    PaymentMethodOrDate = 11,
+    DeceasedPolicyHolder = 12,
+    CoverageChange = 13,
+    DissatisfactionService = 14,
+    UnderwritingRules = 15,
+    MovingToAnotherCountry = 16,
+    ProductService = 17,
+    PolicyHolderChange = 18,
+    PriceIncrease = 19,
+    Other = 20,
+}    
+```
+</div></div>
+
+---
+
+## Generated types
+
+```rust
+pub trait PolicyManagementService {
+    async fn decline_renewal(
+        &self,
+        request: Request<DeclineRenewalRequest>,
+    ) -> Result<Response<DeclineRenewalResponse>, Status>
+	// ...
+}
+```
 
 ---
 ## Exposing the generated code as a library
@@ -479,29 +549,11 @@ pub mod policy_service {
 
 note:
 
-We need to expose the generated code through our lib.rs
+- We must expose the generated code through our lib.rs when building a library
 
 ---
 
 ## Let's build a gRPC application
-
----
-
-## Filling the gaps
-
-```rust
-pub trait PolicyManagementService {
-    async fn decline_renewal(
-        &self,
-        request: Request<DeclineRenewalRequest>,
-    ) -> Result<Response<DeclineRenewalResponse>, Status>
-	// ...
-}
-```
-
-note:
-
-We get a trait generated from the Protobuf Service definition
 
 ---
 
@@ -1035,9 +1087,13 @@ service Health {
 }
 ```
 
-This definition is provided by the official gRPC docs, each language runtime might implement it or not.
-
 [https://github.com/grpc/grpc/blob/master/doc/health-checking.md](https://github.com/grpc/grpc/blob/master/doc/health-checking.md)
+
+note:
+
+- Official service definition from the gRPC documentation
+- Some languages might implement it and others might not
+
 ---
 ## Enabling the health service
 
