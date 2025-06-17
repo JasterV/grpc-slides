@@ -503,6 +503,10 @@ pub enum CustomerDeclineRenewalReason {
 ```
 </div></div>
 
+note:
+
+- Most fields are generated as Option due to the backward/forward compatibility nature of Protobuf
+
 ---
 
 ## Generated types
@@ -662,7 +666,9 @@ let _response = client.generate_contract(request).await?;
 
 note:
 
-What if we wanted to add those headers for every request? Now we talk about interceptors
+- We use the Metadata feature to set authorization headers to the request
+- The ClientStub exposes the same API we defined in our protobuf service definition
+- It handles all the packing-unpacking as well as the network
 
 ---
 
