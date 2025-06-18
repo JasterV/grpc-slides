@@ -717,8 +717,6 @@ note:
 
 ---
 
----
-
 # Building middleware with Tower
 
 So, how can we take advantage of Tower in gRPC?
