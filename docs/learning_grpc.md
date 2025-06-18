@@ -229,6 +229,8 @@ enum CustomerDeclineRenewalReason {
 
 note:
 
+- We use the IDL to define the structure of our protos
+
 - Fields are uniquely identified with a numeric tag.
 
 - When deleting fields, their tag must be marked as reserved to ensure its never used again
