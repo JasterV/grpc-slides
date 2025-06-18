@@ -995,9 +995,9 @@ impl OpenTelemetryTracingLayer {
 
 note:
 
-As we've mentioned, layers exist for better development experience, services could be layered manually.
+- We need the layer if we want to take advantage of the Tower's builder pattern
 
-In this case we don't need any data to be added to the layer.
+- This layer doesn't need any data to be passed to the OpenTelemetry service
 
 ---
 ## Tracing layer
@@ -1025,10 +1025,6 @@ GrpcServer::builder()
     .await?;   
 ```
 
-note:
-
-It is this simple :)
-
 ---
 
 ## Extras
@@ -1045,13 +1041,10 @@ Tonic provides a health check service implementing a standard gRPC health checki
 
 note:
 
-A GRPC service is used as the health checking mechanism. 
-
-Since it is a GRPC service itself, doing a health check is in the same format as a normal rpc. 
-
-It has rich semantics such as per-service health status. 
-
-The server has full control over the access of the health checking service.
+- A GRPC service is used as the health checking mechanism. 
+- Doing a health check is in the same format as a normal rpc.
+- Per-service health monitoring
+- The server has full control over the access of the health checking service.
 
 ---
 ## Health service definition
@@ -1112,16 +1105,18 @@ GrpcServer::builder()
 
 note:
 
-Make it clear that we are using the `tonic-health` crate which doesn't come by default with `tonic`.
+- `tonic-health` has to be imported as a separate crate
 
 ---
 
 ## Interceptors
 
 Interceptors are similar to middleware but with less flexibility.
+
 They allow you to:
-- Add/remove/check items in the metadata of each request. 
-- Cancel a request with a `Status`.
+
+- **Add/remove/check** items in the metadata of each request. 
+- **Cancel** a request with a `Status`.
 ---
 
 ## Interceptors in practice
