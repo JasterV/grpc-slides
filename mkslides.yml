@@ -1,5 +1,5 @@
 slides:
-  highlight_theme: docs/assets/themes/highlight/stackoverflow-dark.css
+  highlight_theme: docs/assets/themes/highlight/tokyo-night-dark.css
   theme: docs/assets/themes/prima.css
   template: docs/assets/templates/slideshow.html.jinja
 revealjs:
@@ -9,3 +9,5 @@ revealjs:
   transition: fade
   height: 1080
   width: 1920
+  disableLayout: false
+  

@@ -1,3 +1,9 @@
+
+<!--
+Hack to force mkslides to compile the images you want to use in the base template
+-->
+<img width="0" src="assets/images/prima-logo-text.svg" />
+
 <div class="heading">
     <h1>Learning gRPC</h1>
     <p>Victor Martinez</p>
@@ -5,10 +11,8 @@
 
 ---
 
-<div class="title">
-    <h2>First, what is RPC?</h2>
-    <p>An idea to extend transfer of control and transmission of data from one machine to another.</p>
-</div>
+<h2>First, what is RPC?</h2>
+<p>An idea to extend transfer of control and transmission of data from one machine to another.</p>
 
 <img alt="RPC implementation" src="assets/images/rpc_architecture.png" style="width: 60%;" />
 
@@ -38,7 +42,7 @@ note:
 
 ---
 
-<img alt="grpc" src="assets/images/grpc-logo.png" style="width: 600px;" />
+<img alt="grpc" src="assets/images/grpc-logo.svg" style="width: 600px;" />
 
 *gRPC is a modern open source high performance Remote Procedure Call (RPC) framework that can run in any environment.*
 
@@ -298,7 +302,7 @@ note:
 ---
 ## The protoc compiler
 
-Compiles `.proto` files into code.
+Compiles **.proto** files into code.
 Supports plugins for different languages.
 
 ```bash
@@ -333,7 +337,7 @@ note:
 # gRPC in the Rust ecosystem
 
 
-<img alt="grpc" src="assets/images/grpc-logo.png" style="width: 300px;" />
+<img alt="grpc" src="assets/images/grpc-logo.svg" style="width: 300px;" />
 
 :heart:
 
@@ -414,7 +418,7 @@ note:
 
 ## Building a layered service
 
-<img alt="tower" src="assets/images/layers-diagram.svg" style="max-width: 35%;" />
+<img alt="tower" src="assets/images/layers-diagram.svg" style="max-width: 30%;" />
 
 ---
 # Tonic
@@ -1190,4 +1194,4 @@ let svc = PolicyManagementServerStub::with_interceptor(
 
 # Thank you for your time 
 
-:heart:
+:purple_heart:
