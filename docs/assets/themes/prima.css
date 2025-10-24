@@ -1,15 +1,10 @@
 /**
- * Dracula Dark theme for reveal.js.
- * Based on https://draculatheme.com
+ * Prima theme for reveal.js.
  */
 
 @import url("https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=League+Gothic&display=swap");
 @import url(https://fonts.googleapis.com/css?family=Lato:400,700,400italic,700italic);
 
-/**
- * Dracula colors by Zeno Rocha
- * https://draculatheme.com/contribute
- */
 html * {
   color-profile: sRGB;
   rendering-intent: auto;
@@ -19,46 +14,41 @@ html * {
  * GLOBAL STYLES
  *********************************************/
 :root {
-  --r-background-color: #282a36;
+  --r-background-color: #ffffff;
   --r-main-font:
-    -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui,
+    Lato, -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui,
     helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial,
     sans-serif;
   --r-main-font-size: 40px;
-  --r-main-color: #f8f8f2;
+  --r-main-color: #21283b;
   --r-block-margin: 20px;
   --r-heading-margin: 0 0 20px 0;
-  --r-heading-font: League Gothic, Impact, sans-serif;
-  --r-heading-color: #bd93f9;
+  --r-heading-font: Lato, League Gothic, Impact, sans-serif;
+  --r-heading-color: #21283b;
   --r-heading-line-height: 1.2;
   --r-heading-letter-spacing: normal;
   --r-heading-text-transform: none;
   --r-heading-text-shadow: none;
-  --r-heading-font-weight: normal;
+  --r-heading-font-weight: bold;
   --r-heading1-text-shadow: none;
-  --r-heading1-size: 3.77em;
-  --r-heading2-size: 2.11em;
+  --r-heading1-size: 3em;
+  --r-heading2-size: 2em;
   --r-heading3-size: 1.55em;
   --r-heading4-size: 1em;
   --r-code-font:
     Fira Code, Menlo, Consolas, Monaco, Liberation Mono, Lucida Console,
     monospace;
-  --r-link-color: #ff79c6;
+  --r-link-color: #8334c2;
   --r-link-color-dark: rgb(255, 64.6, 174.0089552239);
-  --r-link-color-hover: #8be9fd;
+  --r-link-color-hover: #8334c2;
   --r-selection-background-color: #44475a;
   --r-selection-color: #fff;
   --r-overlay-element-bg-color: 240, 240, 240;
   --r-overlay-element-fg-color: 0, 0, 0;
-  --r-bold-color: #ffb86c;
-  --r-italic-color: #f1fa8c;
+  --r-bold-color: #6738a1;
+  --r-italic-color: #1d1c1d;
   --r-inline-code-color: white;
-  --r-list-bullet-color: #8be9fd;
-}
-
-.reveal-viewport {
-  background: #282a36;
-  background-color: var(--r-background-color);
+  --r-list-bullet-color: #8334c2;
 }
 
 .reveal {
@@ -68,16 +58,8 @@ html * {
   color: var(--r-main-color);
 }
 
-.reveal ::selection {
-  color: var(--r-selection-color);
-  background: var(--r-selection-background-color);
-  text-shadow: none;
-}
-
-.reveal ::-moz-selection {
-  color: var(--r-selection-color);
-  background: var(--r-selection-background-color);
-  text-shadow: none;
+body .slides-header {
+  text-align: left;
 }
 
 .reveal .slides section,
@@ -89,16 +71,6 @@ html * {
 /*********************************************
  * HEADERS
  *********************************************/
-section.has-light-background,
-section.has-light-background h1,
-section.has-light-background h2,
-section.has-light-background h3,
-section.has-light-background h4,
-section.has-light-background h5,
-section.has-light-background h6 {
-  color: #282a36;
-}
-
 .reveal h1,
 .reveal h2,
 .reveal h3,
@@ -241,8 +213,8 @@ section.has-light-background h6 {
   margin: var(--r-block-margin) auto;
   text-align: left;
   font-family: var(--r-code-font);
-  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.15);
-  max-width: 80%;
+  box-shadow: 0px 5px 15px rgba(0, 0, 0, 0.30);
+  max-width: 60%;
 }
 
 .reveal .code-wrapper code {
@@ -255,59 +227,7 @@ section.has-light-background h6 {
   overflow-y: auto;
   font-size: 1.3rem;
   line-height: 1.4em;
-}
-
-.reveal table {
-  margin: auto;
-  border-collapse: collapse;
-  border-spacing: 0;
-}
-
-.reveal table th {
-  font-weight: bold;
-}
-
-.reveal table th,
-.reveal table td {
-  text-align: left;
-  padding: 0.2em 0.5em 0.2em 0.5em;
-  border-bottom: 1px solid;
-}
-
-.reveal table th[align="center"],
-.reveal table td[align="center"] {
-  text-align: center;
-}
-
-.reveal table th[align="right"],
-.reveal table td[align="right"] {
-  text-align: right;
-}
-
-.reveal table tbody tr:last-child th,
-.reveal table tbody tr:last-child td {
-  border-bottom: none;
-}
-
-.reveal sup {
-  vertical-align: super;
-  font-size: smaller;
-}
-
-.reveal sub {
-  vertical-align: sub;
-  font-size: smaller;
-}
-
-.reveal small {
-  display: inline-block;
-  font-size: 0.6em;
-  line-height: 1.2em;
-  vertical-align: top;
-}
-
-.reveal small * {
-  vertical-align: top;
+  background-color: var(--r-main-color);
 }
 
 .reveal img {
@@ -327,28 +247,6 @@ section.has-light-background h6 {
   color: var(--r-link-color-hover);
   text-shadow: none;
   border: none;
-}
-
-.reveal .roll span:after {
-  color: #fff;
-  background: var(--r-link-color-dark);
-}
-
-/*********************************************
- * Frame helper
- *********************************************/
-.reveal .r-frame {
-  border: 4px solid var(--r-main-color);
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
-}
-
-.reveal a .r-frame {
-  transition: all 0.15s linear;
-}
-
-.reveal a:hover .r-frame {
-  border-color: var(--r-link-color);
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.55);
 }
 
 /*********************************************

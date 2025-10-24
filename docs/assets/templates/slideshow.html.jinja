@@ -28,14 +28,17 @@
     <body>
         <div class="reveal">
             <div class="slides">
+                <header class="slides-header">
+                    <img src="assets/images/prima-logo-text.svg">
+                </header>
                 <section data-markdown
                 {% for key, value in markdown_data_options.items() %}
                     {{ key }}="{{ value }}"
                 {% endfor %}
                 >
-                    <textarea data-template>
-                        {{ markdown }}
-                    </textarea>
+                  <textarea data-template>
+                      {{ markdown }}
+                  </textarea>
                 </section>
             </div>
         </div>
