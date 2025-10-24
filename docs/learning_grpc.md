@@ -1,12 +1,14 @@
-# Learning gRPC
-
-Victor Martinez
+<div class="heading">
+    <h1>Learning gRPC</h1>
+    <p>Victor Martinez</p>
+</div>
 
 ---
 
-# First, what is RPC?
-
-An idea to extend transfer of control and transmission of data from one machine to another.
+<div class="title">
+    <h2>First, what is RPC?</h2>
+    <p>An idea to extend transfer of control and transmission of data from one machine to another.</p>
+</div>
 
 <img alt="RPC implementation" src="assets/images/rpc_architecture.png" style="width: 60%;" />
 
