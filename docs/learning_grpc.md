@@ -4,10 +4,8 @@ Hack to force mkslides to compile the images you want to use in the base templat
 -->
 <img width="0" src="assets/images/prima-logo-text.svg" />
 
-<div class="heading">
-    <h1>Learning gRPC</h1>
-    <p>Victor Martinez</p>
-</div>
+<h1>Learning gRPC</h1>
+<p>Victor Martinez</p>
 
 ---
 
