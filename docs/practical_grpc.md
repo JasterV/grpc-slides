@@ -19,8 +19,7 @@
       + Manual project setup
       + Build script
       + Exposing a library
-      + Supporting multiple tonic versions
-  + CI/CD
+  + CI & Release flow
       + The Buf tool
       + Checking for breaking changes
       + How to release
@@ -50,7 +49,7 @@
 
 ---
 
-## Ingredients to build a gRPC API
+## Ingredients to build a **gRPC API**
 
 <div class="row">
   <img alt="protocol buffers logo" src="assets/images/protocol-buffers.png" style="width: 700px;" />  <!-- .element: class="fragment" data-fragment-index="1" -->
@@ -60,7 +59,7 @@
 
 ---
 
-## Defining our API
+## Defining our **API**
 
 <img alt="protocol buffers logo" src="assets/images/protocol-buffers.png" style="width: 700px;" />
 
@@ -68,7 +67,7 @@
 
 ## Project structure
 
-<img alt="protocol buffers logo" src="assets/images/project-structure.png" style="width: 1080px;" />
+<img alt="project structure" src="assets/images/project-structure.png" style="width: 1080px;" />
 
 <a href="https://github.com/primait/es-policy-grpc">https://github.com/primait/es-policy-grpc</a>
 
@@ -76,13 +75,13 @@
 
 ## Project structure
 
-<img alt="protocol buffers logo" src="assets/images/project-structure-2.png" style="width: 1080px;" />
+<img alt="project structure" src="assets/images/project-structure-2.png" style="width: 1080px;" />
 
 <a href="https://github.com/primait/es-policy-grpc">https://github.com/primait/es-policy-grpc</a>
 
 ---
 
-## Defining a request
+## Defining a **request**
 
 ```proto
 syntax = "proto3";
@@ -116,7 +115,7 @@ message IssuePolicyRequest {
 
 ---
 
-## Defining a request
+## Defining a **request**
 
 ```proto
 syntax = "proto3";
@@ -154,7 +153,7 @@ enum RoadsideAssistanceTier {
 
 ---
 
-## Defining a response
+## Defining a **response**
 
 ```proto
 syntax = "proto3";
@@ -168,4 +167,344 @@ message IssuePolicyResponse {
 
 ---
 
-## About backwards compatibility
+## About **backwards** compatibility
+
+---
+
+### Required fields don't exist, everything has a default value
+
++ **Strings** => The empty string.
++ **Bytes** => Empty bytes.
++ **Bools** => False.
++ **Numeric** => Zero.
++ **Message** => Not set. Its exact value is language-dependent.
++ **Enums** => The first defined enum value, which must be 0.
+
+<a href="https://protobuf.dev/programming-guides/proto3/#default">https://protobuf.dev/programming-guides/proto3/#default</a>
+
+---
+
+### Enums must have an "**Unspecified**" variant
+
+```proto
+enum BundleSlug {
+  BUNDLE_SLUG_UNSPECIFIED = 0;
+  BUNDLE_SLUG_TERCEROS_BASICO = 1;
+  BUNDLE_SLUG_TERCEROS_AMPLIADO = 2;
+  BUNDLE_SLUG_TODO_RIESGO_CON_FRANQUICIA = 3;
+  BUNDLE_SLUG_TODO_RIESGO_CON_FRANQUICIA_300 = 4;
+  BUNDLE_SLUG_TODO_RIESGO_CON_FRANQUICIA_500 = 5;
+} 
+```
+
+<a href="https://protobuf.dev/best-practices/dos-donts#unspecified-enum">https://protobuf.dev/best-practices/dos-donts/#unspecified-enum</a>
+
+---
+
+### Field tags must **never** be reused
+
+And deleted fields must be marked as reserved
+
+```proto
+message AmendWithdrawalRequest {
+  string policy_id = 1;
+  google.protobuf.Timestamp requested_at = 2;
+
+  reserved 3;
+  reserved "interruption_at";
+
+  optional string description = 4;
+  oneof reason {
+    es_policy_grpc.messages.withdraw_policy.request.v1.CustomerWithdrawReason customer = 5;
+  }
+}
+```
+
+<a href="https://protobuf.dev/best-practices/dos-donts#reuse-number">https://protobuf.dev/best-practices/dos-donts#reuse-number</a>
+
+---
+
+### Learn more about **Do's** and **Dont's**
+
+<a href="https://protobuf.dev/best-practices/dos-donts">https://protobuf.dev/best-practices/dos-donts</a>
+
+---
+
+## Defining a **service**
+
+```proto
+syntax = "proto3";
+
+package es_policy_grpc.service.v1;
+
+import "es_policy_grpc/messages/issue_policy/request/v1/request.proto";
+import "es_policy_grpc/messages/issue_policy/response/v1/response.proto";
+
+service PolicyManagementService {
+  rpc IssuePolicy(es_policy_grpc.messages.issue_policy.request.v1.IssuePolicyRequest) returns (es_policy_grpc.messages.issue_policy.response.v1.IssuePolicyResponse);
+} 
+```
+
+---
+
+<h1>Building a library</h1>
+
+<img alt="Tonic logo" src="assets/images/tonic.svg" style="width: 300px" />
+
+---
+
+### Project structure
+
+<img alt="project structure" src="assets/images/rust-project-structure.png" style="width: 1080px;" />
+
+---
+
+### Build script
+
+```rust
+use std::io::Result;
+
+fn main() -> Result<()> {
+    // List of proto files containing a message definition
+    let proto_files = &[
+        //Domain
+        "proto/es_policy_grpc/domain/v1/address.proto",
+        "proto/es_policy_grpc/domain/v1/bundle.proto",
+        // etc.
+        // Messages
+        "proto/es_policy_grpc/messages/issue_policy/request/v1/request.proto",
+        "proto/es_policy_grpc/messages/issue_policy/response/v1/response.proto",
+        // Services
+        "proto/es_policy_grpc/service/v1/service.proto",
+    ];
+
+    // Name of the folder containing the proto definitions
+    let proto_folder = "proto";
+
+    tonic_prost_build::configure()
+        .protoc_arg("--experimental_allow_proto3_optional")
+        .compile_protos(proto_files, &[proto_folder])
+        .unwrap();
+
+    Ok(())
+}
+```
+
+---
+
+### Exposing the generated code
+
+```rust
+// src/lib.rs
+
+pub mod domain {
+    pub mod v1 {
+        include!(concat!(env!("OUT_DIR"), "/es_policy_grpc.domain.v1.rs",));
+    }
+}
+
+pub mod messages {
+    pub mod issue_policy {
+        pub mod request {
+            pub mod v1 {
+              include!(concat!(env!("OUT_DIR"), "/es_policy_grpc.messages.issue_policy.request.v1.rs"));
+            }
+        }
+
+        pub mod response {
+            pub mod v1 {
+                include!(concat!(env!("OUT_DIR"), "/es_policy_grpc.messages.issue_policy.response.v1.rs"));
+            }
+        }
+    }
+}
+
+pub mod policy_service {
+    pub mod v1 {
+        include!(concat!(env!("OUT_DIR"), "/es_policy_grpc.service.v1.rs"));
+    }
+} 
+```
+
+---
+
+<h1>CI & Release flow</h1>
+
+---
+
+### Buf CLI
+
+- A **linter** for proto files
+- A **formatter** for proto files
+- A system to organize your proto files by **workspaces**
+- A feature to check for **breaking changes** in your definitions
+- A **plugin system** to compile proto files into multiple formats
+- **Editor integration**
+- And more!
+
+[https://buf.build/product/cli](https://buf.build/product/cli)
+
+note:
+
+- Builds on top of protoc
+
+- Provides a very easy to use plugin and build system
+
+---
+
+### **CI workflows:** Proto checks
+
+```yaml
+name: "Check proto"
+
+on:
+  pull_request:
+    paths:
+      - "proto/**"
+
+jobs:
+  check-proto:
+    # ..
+    steps:
+        # ..
+      - name: Protobuf format check
+        shell: bash
+        run: |
+          buf format -d --exit-code
+
+      - name: Protobuf lint
+        shell: bash
+        run: |
+          buf lint
+```
+
+---
+
+### **CI workflows:** Rust checks
+
+```yaml
+
+name: "Check rust lib"
+
+on:
+  pull_request:
+    paths:
+      - "es-policy-grpc-rust/**"
+      - "proto/**"
+      - ".github/workflows/check-rust-lib.yml"
+
+jobs:
+  check-rust-lib-compiles:
+    # ..
+    container:
+      image: public.ecr.aws/primaassicurazioni/actions-builder:ubuntu-24.04-3
+    defaults:
+      run:
+        working-directory: es-policy-grpc-rust
+    steps:
+      - uses: actions/checkout@v4
+      - uses: primait/shared-github-actions/actions/install-rust@install-rust-v3
+        # ..
+      - name: Install protoc
+        # ..
+      - name: Cargo build
+        run: cargo build
+```
+
+---
+
+### **CI workflows:** Backwards compatibility check
+
+```yaml
+
+name: "Check backwards compatibility"
+
+on: pull_request
+
+jobs:
+   check-backward-compatibility:
+    # ..
+    steps:
+     - uses: actions/checkout@v4
+
+     - name: Install buf
+     # ..
+     - name: Fetch master branch
+       shell: bash
+       run: |
+         git fetch origin master:master
+
+     - name: Check backwards compatibility against master
+       shell: bash
+       run: |
+         buf breaking --against ".git#branch=master"
+```
+
+---
+
+### **Release workflow**
+
+```yaml
+name: "Release Rust Crate"
+
+on:
+  push:
+    tags:
+      - "*"
+   
+jobs:
+  publish:
+    # ..
+    steps:
+      - uses: actions/checkout@v4
+      - uses: primait/shared-github-actions/actions/install-rust@rust-ci-v3
+      # ..
+      - name: Install cargo edit
+      # ..
+      - name: Set release version
+        working-directory: es-policy-grpc-rust
+        run: |
+          cargo set-version $GITHUB_REF_NAME
+      - name: Retrieve vault token
+        # ..
+      - name: Install protoc compiler
+      # ..
+      - name: Publish package
+        working-directory: es-policy-grpc-rust
+        run: |
+          cargo publish --allow-dirty
+        env:
+          CARGO_REGISTRIES_ARTIFACTORY_TOKEN: ${{ format('Bearer {0}', CARGO_REGISTRIES_ARTIFACTORY_TOKEN) }}
+```
+
+---
+
+### **Release workflow:** Cargo configuration
+
+<div class="row" style="gap: 0;">
+
+```toml
+# .cargo/config.toml
+
+# Makes artifactory the default registry and saves passing --registry parameter
+[registry]
+default = "artifactory"
+global-credential-providers = ["cargo:token"]
+
+[registries]
+artifactory = { index = "sparse+https://prima.jfrog.io/artifactory/api/cargo/policy-management-crates/index/" }
+```
+
+```toml
+# Cargo.toml
+
+[package]
+name = "es-policy-grpc"
+version = "0.6.7"
+edition = "2024"
+# ..
+publish = ["artifactory"]  
+```
+
+</div>
+
