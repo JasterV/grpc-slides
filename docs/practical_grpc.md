@@ -508,3 +508,331 @@ publish = ["artifactory"]
 
 </div>
 
+---
+
+## Building a gRPC server
+
+<img alt="Tonic logo" src="assets/images/tonic.svg" style="width: 300px" />
+
+---
+
+### **Importing our library:** Required setup
+
+```toml
+# .cargo/config.toml
+
+[registries.policy-management-crates]
+index = "sparse+https://prima.jfrog.io/artifactory/api/cargo/policy-management-crates/index/"
+
+[registry]
+global-credential-providers = ["cargo:token"]
+```
+
+---
+
+### **Importing our library:** Required setup
+
+```toml
+# ~/.cargo/credentials.toml
+
+[registries.policy-management]
+token = "Bearer <generated-token>"
+```
+
+---
+
+### Importing our library
+
+```toml
+# Cargo.toml
+
+es-policy-grpc = { version = "=0.6.4", registry = "policy-management-crates", features = [
+  "tonic_0_14",
+] }
+prost = "0.14"
+prost-types = "0.14"
+tonic = { version = "0.14", features = [
+  "gzip",
+  "server",
+  "tls-native-roots",
+  "tls-ring",
+  "tls-webpki-roots",
+] }
+tonic-health = "0.14"
+```
+
+---
+
+### Implementing the service trait
+
+```rust
+// ..
+use es_policy_grpc::policy_service::v1::PolicyManagementService;
+
+pub struct PolicyManagementServiceImpl {
+    application: Application,
+} 
+
+#[tonic::async_trait]
+impl PolicyManagementService for PolicyManagementServiceImpl {
+  // ..
+}
+```
+
+---
+
+### Implementing the service trait
+
+```rust
+// ..
+impl PolicyManagementService for PolicyManagementServiceImpl {
+    async fn issue_policy(
+        &self,
+        request: Request<IssuePolicyRequest>,
+    ) -> Result<Response<IssuePolicyResponse>, Status> {
+        let request = request.into_inner();
+
+        let issue_policy = request.try_to_domain().map_err(|err| {
+            Status::invalid_argument(
+              format!("Failed to parse issue policy request: '{err}'")
+            )
+        })?;
+
+        let policy_id = self
+            .application
+            .policy_service()
+            .issue(issue_policy)
+            .await
+            .map_err(|err| Status::internal(
+              format!("Error issuing policy; error '{err:?}'")
+            ))?;
+
+        Ok(Response::new(IssuePolicyResponse { policy_id: policy_id.to_string() }))
+    }
+}
+```
+
+---
+
+### **Implementing the service trait:** Parsing request data
+
+```rust
+impl TryToDomain<DomainIssuePolicyRequest> for IssuePolicyRequest {
+    fn try_to_domain(self) -> Result<DomainIssuePolicyRequest, ParseGrpcError> {
+        Ok(DomainIssuePolicyRequest {
+            start_at: self
+                .start_at
+                .ok_or(ParseGrpcError::MissingField("start_at"))
+                .and_then(|v| {
+                  parse_prost_timestamp(v).map_err(|err|
+                    ParseGrpcError::InvalidField("start_at", err)
+                  )
+                })?,
+            purchased_at: self
+                .purchased_at
+                .ok_or(ParseGrpcError::MissingField("purchased_at"))
+                .and_then(|v| {
+                  parse_prost_timestamp(v).map_err(|err|
+                    ParseGrpcError::InvalidField("purchased_at", err)
+                  )
+                })?,
+            transaction: self
+                .transaction
+                .clone()
+                .ok_or(ParseGrpcError::MissingField("transaction"))?
+                .try_to_domain()?,
+            //..
+        })
+    }
+} 
+```
+---
+
+### **Implementing the service trait:** Parsing request data
+
+```rust
+impl TryToDomain<DomainIssuingCompany> for IssuingCompany {
+    fn try_to_domain(self) -> Result<DomainIssuingCompany, ParseGrpcError> {
+        match self {
+            IssuingCompany::Unspecified => {
+                Err(ParseGrpcError::UnspecifiedEnumVariant("IssuingCompany"))
+            }
+            IssuingCompany::Iptiq => Ok(DomainIssuingCompany::Iptiq),
+            IssuingCompany::GreatLakes => Ok(DomainIssuingCompany::GreatLakes),
+        }
+    }
+}
+```
+
+---
+
+### **Implementing the service trait:** Parsing request data
+
+```rust
+impl TryToDomain<OwnerInfo> for OwnerInformation {
+    fn try_to_domain(self) -> Result<OwnerInfo, ParseGrpcError> {
+        Ok(OwnerInfo {
+            name: self.first_name,
+            first_last_name: self.primary_last_name,
+            second_last_name: self.secondary_last_name,
+            birth_date: parse_proto_naive_date(self.birth_date.ok_or(
+                ParseGrpcError::MissingField("Policy vehicle owner birthdate"),
+            )?)
+            .map_err(|e| {
+                ParseGrpcError::InvalidField("Policy vehicle owner birthdate", e.into())
+            })?,
+            residential_address: match self.address {
+                Some(address) => Some(address.try_to_domain()?),
+                None => None,
+            },
+            document_id: self.document,
+        })
+    }
+}
+```
+
+---
+
+### Exposing our server
+
+```rust
+let router = Server::builder()
+    .add_service(PolicyManagementServiceServer::new(
+      PolicyManagementServiceImpl::new(application)
+    ));
+
+let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
+    .await
+    .context("Failed to open socket connection for gRPC server")?;
+
+router
+    .serve_with_incoming(TcpListenerStream::new(listener))
+    .await?;
+```
+
+---
+
+### **Middleware:** Authentication
+
+```rust
+use prima_tower::authentication::verify_jwt::JwtAuthLayer;
+
+// ..
+
+let jwks_client = JwksClient::builder().build(
+    WebSource::builder()
+        .build(jwks_url)
+        .expect("Failed to build WebSource for JwksClient"),
+);
+
+let service = ServiceBuilder::new()
+    .layer(JwtAuthLayer::new(jwks_client, auth0_audience))
+    .named_layer(PolicyManagementServiceServer::new(
+        PolicyManagementServiceImpl::new(application),
+    ));
+
+let router = Server::builder().add_service(service);
+```
+
+---
+
+### **Middleware:** Tracing
+
+```rust
+use prima_tower::trace::OpenTelemetryServerTracingLayer;
+use tower_http::sensitive_headers::{
+    SetSensitiveRequestHeadersLayer, SetSensitiveResponseHeadersLayer,
+};
+
+// ..
+
+let service = ServiceBuilder::new()
+    .layer(SetSensitiveRequestHeadersLayer::new([
+        header::AUTHORIZATION,
+    ]))
+    .layer(OpenTelemetryServerTracingLayer::new_for_grpc())
+    .layer(SetSensitiveResponseHeadersLayer::new([
+        header::AUTHORIZATION,
+    ]))
+    // ..
+    .named_layer(PolicyManagementServiceServer::new(
+        PolicyManagementServiceImpl::new(application),
+    ));
+
+let router = Server::builder().add_service(service);
+```
+
+---
+
+## **Deploying** our server
+
+---
+
+### **Deploying** our server
+
+```yaml
+# deploy/values/default.yml
+
+default:
+  # ..
+  container:
+    # ..
+    environmentVars:
+      language: rust
+      port: 50051
+      run_migrations: false
+      extras:
+        # .. environment vars
+    ports:
+      - name: grpc
+        containerPort: 50051
+        protocol: TCP
+```
+
+---
+
+### **Deploying** our server
+
+```yaml
+# deploy/values/default.yml
+
+apps:
+  web:
+    deployment:
+      serviceAccount: web
+      containers:
+        main:
+          environmentVars:
+            role: web
+          startupProbe:
+            grpc:
+              port: 50051
+            initialDelaySeconds: 15
+          livenessProbe:
+            grpc:
+              port: 50051
+            initialDelaySeconds: 15
+          readinessProbe:
+            grpc:
+              port: 50051
+            initialDelaySeconds: 15
+```
+
+---
+
+### **Deploying** our server
+
+```yaml
+# deploy/values/default.yml
+
+services:
+  default:
+    selector: web
+    spec:
+      type: ClusterIP
+      ports:
+        - port: 50051
+          targetPort: 50051
+          name: web
+          protocol: TCP
+```
