@@ -836,3 +836,90 @@ services:
           name: web
           protocol: TCP
 ```
+
+---
+
+## Calling our server
+
+---
+
+### Create a client
+
+```rust
+use es_policy_grpc::{
+  policy_service::v1::policy_management_service_client::PolicyManagementServiceClient
+};
+use tower_http::sensitive_headers::{
+    SetSensitiveRequestHeadersLayer, SetSensitiveResponseHeadersLayer,
+};
+use prima_tower::authentication::client_credentials::{ ClientCredentials, ClientCredentialsAuth, ClientCredentialsAuthLayer, };
+// ..
+
+let uri = "http://policy-management-es.policy-management:50051";
+let channel = Channel::builder(uri).connect_lazy();
+
+let channel = ServiceBuilder::new()
+    .layer(ClientCredentialsAuthLayer::new(
+        prima_http::Client::standard(credentials.token_url).build(),
+        credentials,
+    ))
+    .layer(SetSensitiveRequestHeadersLayer::new(once(
+        header::AUTHORIZATION,
+    )))
+    .layer(OpenTelemetryClientTracingLayer::new_for_grpc())
+    .layer(SetSensitiveResponseHeadersLayer::new(once(
+        header::AUTHORIZATION,
+    )))
+    .service(channel);
+
+let client = PolicyManagementServiceClient::new(channel);
+```
+
+---
+
+### **Making a gRPC call:** Building the request
+
+```rust
+impl FromDomain<DomainIssuePolicyRequest> for IssuePolicyRequest {
+    fn from_domain(request: DomainIssuePolicyRequest) -> Self {
+        Self {
+            policy_holder_information: Some(PolicyHolderInformation::from_domain(
+                request.policy_holder_information(),
+            )),
+            vehicle_information: Some(VehicleInformation::from_domain((
+                request.vehicle_information(),
+                request.occasional_driver(),
+            ))),
+            requested_at: Some(to_prost_timestamp(Utc::now())),
+            start_at: Some(to_prost_timestamp(request.start_at)),
+            end_at: Some(to_prost_timestamp(request.end_at)),
+            purchased_at: Some(to_prost_timestamp(request.purchased_at)),
+            transaction: Some(TransactionInformation::from_domain(request.transaction)),
+            issuing_company: IssuingCompany::from_domain(request.issuing_company) as i32,
+            quote_id: String::from(Uuid::from(request.quote_id)),
+            quote_source: QuoteSource::from_domain(request.quote_source) as i32,
+            application_id: String::from(Uuid::from(request.application_id)),
+            offer_id: String::from(Uuid::from(request.offer_id)),
+            price: Some(Price::from_domain(request.price)),
+            bundle: Some(Bundle::from_domain(request.bundle)),
+            covers: request.covers.into_iter().map(ProductCover::from_domain).collect(),
+            quote_version: QuoteVersion::from_domain(request.terms_and_conditions) as i32,
+        }
+    }
+}  
+```
+
+---
+
+### Making a gRPC call
+
+```rust
+let response = client
+    .issue_policy(IssuePolicyRequest::from_domain(issue_policy_request))
+    .await
+    .map_err(|status| GrpcError::BadResponse(status.to_string()))?
+    .into_inner();
+
+let policy_id = Uuid::parse_str(&response.policy_id).expect("policy_id should always be a valid uuid");
+```
+
