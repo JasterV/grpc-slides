@@ -917,35 +917,16 @@ let policy_id = Uuid::parse_str(&response.policy_id).expect("policy_id should al
 
 ### **How are they using it:** Backoffice
 
-The **Customer Support Spain UK** team has been using our **Rust** library for a few months.
+The **Customer Support Spain UK** team has been using our **Rust** library for some time.
 
-Currently they are making use of the following operations: 
+Currently they are making use of the following operations in production: 
 
-
-<div class="row">
-  <div>
-
-  + *terminate_policy*
-  + *withdraw_policy*
-  + *update_policy_holder_email*
-  + *send_policy_contract_email*
-  + *find_corrected_email*
-  + *amend_termination*
-  + *decline_renewal*
-  
-  </div>
-
-  <div>
-
-  + *generate_contract*
-  + *amend_withdrawal*
-  + *find_by_application_id*
-  + *find_by_cfid*
-  + *find_by_id*
-  + *search*
-
-  </div>
-</div>
++ *update_policy_holder_email*
++ *send_policy_contract_email*
++ *terminate_policy*
++ *withdraw_policy*
++ *amend_termination*
++ *decline_renewal*
 
 ---
 
@@ -954,6 +935,16 @@ Currently they are making use of the following operations:
 
 The **Underwriting Processes** team is using the **Elixir** library to generate a pre-signed url of a contract.
 
-So far it's been a success :smile:
+---
 
+### Some metrics
 
+<img alt="protocol buffers logo" src="assets/images/metrics.png" style="width: 100%;" />
+
+Data gathered from **October 21st** to **November 4th**
+
+---
+
+# Thank you
+
+:purple_heart:
