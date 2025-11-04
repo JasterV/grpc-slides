@@ -902,3 +902,58 @@ let response = client
 let policy_id = Uuid::parse_str(&response.policy_id).expect("policy_id should always be a valid uuid");
 ```
 
+---
+
+## How is it going so far?
+
+---
+
+### Domains using our gRPC client
+
++ **Backoffice**
++ **Pricing & Underwriting**
+
+---
+
+### **How are they using it:** Backoffice
+
+The **Customer Support Spain UK** team has been using our **Rust** library for a few months.
+
+Currently they are making use of the following operations: 
+
+
+<div class="row">
+  <div>
+
+  + *terminate_policy*
+  + *withdraw_policy*
+  + *update_policy_holder_email*
+  + *send_policy_contract_email*
+  + *find_corrected_email*
+  + *amend_termination*
+  + *decline_renewal*
+  
+  </div>
+
+  <div>
+
+  + *generate_contract*
+  + *amend_withdrawal*
+  + *find_by_application_id*
+  + *find_by_cfid*
+  + *find_by_id*
+  + *search*
+
+  </div>
+</div>
+
+---
+
+
+### **How are they using it:** Pricing & Underwriting
+
+The **Underwriting Processes** team is using the **Elixir** library to generate a pre-signed url of a contract.
+
+So far it's been a success :smile:
+
+
