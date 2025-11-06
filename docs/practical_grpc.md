@@ -19,7 +19,6 @@
   <div>
 
   + Building a gRPC server
-  + How to deploy
   + How to call our server
   + How is it going so far
 
@@ -34,13 +33,38 @@
   <img alt="protocol buffers logo" src="assets/images/protocol-buffers.png" style="width: 700px;" />  <!-- .element: class="fragment" data-fragment-index="1" -->
   <img alt="Buf logo" src="https://cdn.prod.website-files.com/67202403476bad65d88793e7/6720247ef74ab81302be8c70_Buf%20logo%20%5Bcolor%5D.svg" style="width: 300px;" /> <!-- .element: class="fragment" data-fragment-index="2" -->
 </div>
-<img alt="Tonic logo" src="assets/images/tonic.svg" style="width: 300px" /> <!-- .element: class="fragment" data-fragment-index="3" -->
+
+<div class="column" style="gap: 0;"> <!-- .element: class="fragment" data-fragment-index="3" -->
+  <img alt="Tonic logo" src="assets/images/tonic.svg" style="width: 300px" />
+  
+  *Tonic*
+</div>
 
 ---
 
 ## Defining our **API**
 
 <img alt="protocol buffers logo" src="assets/images/protocol-buffers.png" style="width: 700px;" />
+
+---
+
+## EsPolicyGrpc
+
+<img alt="es-policy-grpc project" src="assets/images/es-policy-grpc.png" />
+
+<a href="https://github.com/primait/es-policy-grpc">https://github.com/primait/es-policy-grpc</a>
+
+---
+
+## Why a dedicated **repository**?
+
++ It is **not coupled** to a single project.
+
++ **Multiple projects** implement the same **gRPC** server.
+
++ We want **multiple domains** to use our gRPC libraries.
+
++ **Dedicated CI**, can grow without affecting directly an existing project.
 
 ---
 
@@ -311,26 +335,6 @@ pub mod policy_service {
 
 ---
 
-### Buf CLI
-
-- A **linter** for proto files
-- A **formatter** for proto files
-- A system to organize your proto files by **workspaces**
-- A feature to check for **breaking changes** in your definitions
-- A **plugin system** to compile proto files into multiple formats
-- **Editor integration**
-- And more!
-
-[https://buf.build/product/cli](https://buf.build/product/cli)
-
-note:
-
-- Builds on top of protoc
-
-- Provides a very easy to use plugin and build system
-
----
-
 ### **CI workflows:** Proto checks
 
 ```yaml
@@ -355,39 +359,6 @@ jobs:
         shell: bash
         run: |
           buf lint
-```
-
----
-
-### **CI workflows:** Rust checks
-
-```yaml
-
-name: "Check rust lib"
-
-on:
-  pull_request:
-    paths:
-      - "es-policy-grpc-rust/**"
-      - "proto/**"
-      - ".github/workflows/check-rust-lib.yml"
-
-jobs:
-  check-rust-lib-compiles:
-    # ..
-    container:
-      image: public.ecr.aws/primaassicurazioni/actions-builder:ubuntu-24.04-3
-    defaults:
-      run:
-        working-directory: es-policy-grpc-rust
-    steps:
-      - uses: actions/checkout@v4
-      - uses: primait/shared-github-actions/actions/install-rust@install-rust-v3
-        # ..
-      - name: Install protoc
-        # ..
-      - name: Cargo build
-        run: cargo build
 ```
 
 ---
@@ -627,58 +598,16 @@ impl TryToDomain<DomainIssuePolicyRequest> for IssuePolicyRequest {
 ```
 ---
 
-### **Implementing the service trait:** Parsing request data
-
-```rust
-impl TryToDomain<DomainIssuingCompany> for IssuingCompany {
-    fn try_to_domain(self) -> Result<DomainIssuingCompany, ParseGrpcError> {
-        match self {
-            IssuingCompany::Unspecified => {
-                Err(ParseGrpcError::UnspecifiedEnumVariant("IssuingCompany"))
-            }
-            IssuingCompany::Iptiq => Ok(DomainIssuingCompany::Iptiq),
-            IssuingCompany::GreatLakes => Ok(DomainIssuingCompany::GreatLakes),
-        }
-    }
-}
-```
-
----
-
-### **Implementing the service trait:** Parsing request data
-
-```rust
-impl TryToDomain<OwnerInfo> for OwnerInformation {
-    fn try_to_domain(self) -> Result<OwnerInfo, ParseGrpcError> {
-        Ok(OwnerInfo {
-            name: self.first_name,
-            first_last_name: self.primary_last_name,
-            second_last_name: self.secondary_last_name,
-            birth_date: parse_proto_naive_date(self.birth_date.ok_or(
-                ParseGrpcError::MissingField("Policy vehicle owner birthdate"),
-            )?)
-            .map_err(|e| {
-                ParseGrpcError::InvalidField("Policy vehicle owner birthdate", e.into())
-            })?,
-            residential_address: match self.address {
-                Some(address) => Some(address.try_to_domain()?),
-                None => None,
-            },
-            document_id: self.document,
-        })
-    }
-}
-```
-
----
-
 ### Exposing our server
 
 ```rust
-let router = Server::builder()
-    .add_service(PolicyManagementServiceServer::new(
-      PolicyManagementServiceImpl::new(application)
+let service = ServiceBuilder::new()
+    .layer(JwtAuthLayer::new(jwks_client, auth0_audience))
+    .named_layer(PolicyManagementServiceServer::new(
+        PolicyManagementServiceImpl::new(application),
     ));
+
+let router = Server::builder().add_service(service);
 
 let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
     .await
@@ -687,133 +616,6 @@ let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
 router
     .serve_with_incoming(TcpListenerStream::new(listener))
     .await?;
-```
-
----
-
-### **Middleware:** Authentication
-
-```rust
-use prima_tower::authentication::verify_jwt::JwtAuthLayer;
-
-// ..
-
-let jwks_client = JwksClient::builder().build(
-    WebSource::builder()
-        .build(jwks_url)
-        .expect("Failed to build WebSource for JwksClient"),
-);
-
-let service = ServiceBuilder::new()
-    .layer(JwtAuthLayer::new(jwks_client, auth0_audience))
-    .named_layer(PolicyManagementServiceServer::new(
-        PolicyManagementServiceImpl::new(application),
-    ));
-
-let router = Server::builder().add_service(service);
-```
-
----
-
-### **Middleware:** Tracing
-
-```rust
-use prima_tower::trace::OpenTelemetryServerTracingLayer;
-use tower_http::sensitive_headers::{
-    SetSensitiveRequestHeadersLayer, SetSensitiveResponseHeadersLayer,
-};
-
-// ..
-
-let service = ServiceBuilder::new()
-    .layer(SetSensitiveRequestHeadersLayer::new([
-        header::AUTHORIZATION,
-    ]))
-    .layer(OpenTelemetryServerTracingLayer::new_for_grpc())
-    .layer(SetSensitiveResponseHeadersLayer::new([
-        header::AUTHORIZATION,
-    ]))
-    // ..
-    .named_layer(PolicyManagementServiceServer::new(
-        PolicyManagementServiceImpl::new(application),
-    ));
-
-let router = Server::builder().add_service(service);
-```
-
----
-
-## **Deploying** our server
-
----
-
-### **Deploying** our server
-
-```yaml
-# deploy/values/default.yml
-
-default:
-  # ..
-  container:
-    # ..
-    environmentVars:
-      language: rust
-      port: 50051
-      run_migrations: false
-      extras:
-        # .. environment vars
-    ports:
-      - name: grpc
-        containerPort: 50051
-        protocol: TCP
-```
-
----
-
-### **Deploying** our server
-
-```yaml
-# deploy/values/default.yml
-
-apps:
-  web:
-    deployment:
-      serviceAccount: web
-      containers:
-        main:
-          environmentVars:
-            role: web
-          startupProbe:
-            grpc:
-              port: 50051
-            initialDelaySeconds: 15
-          livenessProbe:
-            grpc:
-              port: 50051
-            initialDelaySeconds: 15
-          readinessProbe:
-            grpc:
-              port: 50051
-            initialDelaySeconds: 15
-```
-
----
-
-### **Deploying** our server
-
-```yaml
-# deploy/values/default.yml
-
-services:
-  default:
-    selector: web
-    spec:
-      type: ClusterIP
-      ports:
-        - port: 50051
-          targetPort: 50051
-          name: web
-          protocol: TCP
 ```
 
 ---
