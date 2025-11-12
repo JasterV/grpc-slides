@@ -4,29 +4,6 @@
 
 ---
 
-<h2>Contents</h2>
-
-<div class="row">
-  <div>
-
-  + Ingredients to build a gRPC API
-  + Defining our API with Protocol Buffers
-  + Generate a Rust library
-  + CI & Release flow
-  
-  </div>
-
-  <div>
-
-  + Building a gRPC server
-  + How to call our server
-  + How is it going so far
-
-  </div>
-</div>
-
----
-
 ## Ingredients to build a **gRPC API**
 
 <div class="row">
@@ -392,6 +369,37 @@ jobs:
 
 ---
 
+### **Release workflow:** Cargo configuration
+
+<div class="row" style="gap: 0;">
+
+```toml
+# .cargo/config.toml
+
+# Makes artifactory the default registry and saves passing --registry parameter
+[registry]
+default = "artifactory"
+global-credential-providers = ["cargo:token"]
+
+[registries]
+artifactory = { index = "sparse+https://prima.jfrog.io/artifactory/api/cargo/policy-management-crates/index/" }
+```
+
+```toml
+# Cargo.toml
+
+[package]
+name = "es-policy-grpc"
+version = "0.6.7"
+edition = "2024"
+# ..
+publish = ["artifactory"]  
+```
+
+</div>
+
+---
+
 ### **Release workflow**
 
 ```yaml
@@ -429,65 +437,9 @@ jobs:
 
 ---
 
-### **Release workflow:** Cargo configuration
-
-<div class="row" style="gap: 0;">
-
-```toml
-# .cargo/config.toml
-
-# Makes artifactory the default registry and saves passing --registry parameter
-[registry]
-default = "artifactory"
-global-credential-providers = ["cargo:token"]
-
-[registries]
-artifactory = { index = "sparse+https://prima.jfrog.io/artifactory/api/cargo/policy-management-crates/index/" }
-```
-
-```toml
-# Cargo.toml
-
-[package]
-name = "es-policy-grpc"
-version = "0.6.7"
-edition = "2024"
-# ..
-publish = ["artifactory"]  
-```
-
-</div>
-
----
-
-## Building a gRPC server
+## Using the library
 
 <img alt="Tonic logo" src="assets/images/tonic.svg" style="width: 300px" />
-
----
-
-### **Importing our library:** Required setup
-
-```toml
-# .cargo/config.toml
-
-[registries.policy-management-crates]
-index = "sparse+https://prima.jfrog.io/artifactory/api/cargo/policy-management-crates/index/"
-
-[registry]
-global-credential-providers = ["cargo:token"]
-```
-
----
-
-### **Importing our library:** Required setup
-
-```toml
-# ~/.cargo/credentials.toml
-
-[registries.policy-management]
-token = "Bearer <generated-token>"
-```
 
 ---
 
@@ -516,24 +468,7 @@ tonic-health = "0.14"
 ### Implementing the service trait
 
 ```rust
-// ..
 use es_policy_grpc::policy_service::v1::PolicyManagementService;
-
-pub struct PolicyManagementServiceImpl {
-    application: Application,
-} 
-
-#[tonic::async_trait]
-impl PolicyManagementService for PolicyManagementServiceImpl {
-  // ..
-}
-```
-
----
-
-### Implementing the service trait
-
-```rust
 // ..
 impl PolicyManagementService for PolicyManagementServiceImpl {
     async fn issue_policy(
@@ -564,50 +499,13 @@ impl PolicyManagementService for PolicyManagementServiceImpl {
 
 ---
 
-### **Implementing the service trait:** Parsing request data
-
-```rust
-impl TryToDomain<DomainIssuePolicyRequest> for IssuePolicyRequest {
-    fn try_to_domain(self) -> Result<DomainIssuePolicyRequest, ParseGrpcError> {
-        Ok(DomainIssuePolicyRequest {
-            start_at: self
-                .start_at
-                .ok_or(ParseGrpcError::MissingField("start_at"))
-                .and_then(|v| {
-                  parse_prost_timestamp(v).map_err(|err|
-                    ParseGrpcError::InvalidField("start_at", err)
-                  )
-                })?,
-            purchased_at: self
-                .purchased_at
-                .ok_or(ParseGrpcError::MissingField("purchased_at"))
-                .and_then(|v| {
-                  parse_prost_timestamp(v).map_err(|err|
-                    ParseGrpcError::InvalidField("purchased_at", err)
-                  )
-                })?,
-            transaction: self
-                .transaction
-                .clone()
-                .ok_or(ParseGrpcError::MissingField("transaction"))?
-                .try_to_domain()?,
-            //..
-        })
-    }
-} 
-```
----
-
 ### Exposing our server
 
 ```rust
-let service = ServiceBuilder::new()
-    .layer(JwtAuthLayer::new(jwks_client, auth0_audience))
-    .named_layer(PolicyManagementServiceServer::new(
+let router = Server::builder()
+    .add_service(PolicyManagementServiceServer::new(
         PolicyManagementServiceImpl::new(application),
     ));
-
-let router = Server::builder().add_service(service);
 
 let listener = tokio::net::TcpListener::bind(("0.0.0.0", port))
     .await
@@ -620,81 +518,12 @@ router
 
 ---
 
-## Calling our server
-
----
-
-### Create a client
-
-```rust
-use es_policy_grpc::{
-  policy_service::v1::policy_management_service_client::PolicyManagementServiceClient
-};
-use tower_http::sensitive_headers::{
-    SetSensitiveRequestHeadersLayer, SetSensitiveResponseHeadersLayer,
-};
-use prima_tower::authentication::client_credentials::{ ClientCredentials, ClientCredentialsAuth, ClientCredentialsAuthLayer, };
-// ..
-
-let uri = "http://policy-management-es.policy-management:50051";
-let channel = Channel::builder(uri).connect_lazy();
-
-let channel = ServiceBuilder::new()
-    .layer(ClientCredentialsAuthLayer::new(
-        prima_http::Client::standard(credentials.token_url).build(),
-        credentials,
-    ))
-    .layer(SetSensitiveRequestHeadersLayer::new(once(
-        header::AUTHORIZATION,
-    )))
-    .layer(OpenTelemetryClientTracingLayer::new_for_grpc())
-    .layer(SetSensitiveResponseHeadersLayer::new(once(
-        header::AUTHORIZATION,
-    )))
-    .service(channel);
-
-let client = PolicyManagementServiceClient::new(channel);
-```
-
----
-
-### **Making a gRPC call:** Building the request
-
-```rust
-impl FromDomain<DomainIssuePolicyRequest> for IssuePolicyRequest {
-    fn from_domain(request: DomainIssuePolicyRequest) -> Self {
-        Self {
-            policy_holder_information: Some(PolicyHolderInformation::from_domain(
-                request.policy_holder_information(),
-            )),
-            vehicle_information: Some(VehicleInformation::from_domain((
-                request.vehicle_information(),
-                request.occasional_driver(),
-            ))),
-            requested_at: Some(to_prost_timestamp(Utc::now())),
-            start_at: Some(to_prost_timestamp(request.start_at)),
-            end_at: Some(to_prost_timestamp(request.end_at)),
-            purchased_at: Some(to_prost_timestamp(request.purchased_at)),
-            transaction: Some(TransactionInformation::from_domain(request.transaction)),
-            issuing_company: IssuingCompany::from_domain(request.issuing_company) as i32,
-            quote_id: String::from(Uuid::from(request.quote_id)),
-            quote_source: QuoteSource::from_domain(request.quote_source) as i32,
-            application_id: String::from(Uuid::from(request.application_id)),
-            offer_id: String::from(Uuid::from(request.offer_id)),
-            price: Some(Price::from_domain(request.price)),
-            bundle: Some(Bundle::from_domain(request.bundle)),
-            covers: request.covers.into_iter().map(ProductCover::from_domain).collect(),
-            quote_version: QuoteVersion::from_domain(request.terms_and_conditions) as i32,
-        }
-    }
-}  
-```
-
----
-
 ### Making a gRPC call
 
 ```rust
+// ...
+let client = PolicyManagementServiceClient::new(channel);
+
 let response = client
     .issue_policy(IssuePolicyRequest::from_domain(issue_policy_request))
     .await
@@ -729,6 +558,8 @@ Currently they are making use of the following operations in production:
 + *withdraw_policy*
 + *amend_termination*
 + *decline_renewal*
++ *find_by_cfid*
++ *search*
 
 ---
 
@@ -741,9 +572,17 @@ The **Underwriting Processes** team is using the **Elixir** library to generate 
 
 ### Some metrics
 
-<img alt="protocol buffers logo" src="assets/images/metrics.png" style="width: 100%;" />
+<img alt="protocol buffers logo" src="assets/images/metrics-es-be.png" style="width: 100%;" />
 
-Data gathered from **October 21st** to **November 4th**
+Data gathered from **October 29th** to **November 12th**
+
+---
+
+### Some metrics
+
+<img alt="protocol buffers logo" src="assets/images/metrics-posu.png" style="width: 100%;" />
+
+Data gathered from **October 29th** to **November 12th**
 
 ---
 
